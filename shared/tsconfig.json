@@ -1,0 +1,17 @@
+{
+  // Standalone on purpose: shared/ is dependency-free, so it must not inherit
+  // the app's tsconfig (which extends expo/tsconfig.base). Tools that read the
+  // nearest tsconfig per file (Vitest, esbuild) then work in the server-only
+  // CI job, where the app's node_modules are not installed.
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["jest"]
+  },
+  "include": ["**/*.ts"]
+}

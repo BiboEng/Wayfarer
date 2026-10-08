@@ -42,7 +42,10 @@
 - **App icons and splash** are still Expo's template art; replace them before Phase 8.
 - **Custom subagent types aren't registered in this session.** The `.claude/agents/*` files exist, but the Lead ran each role as a general-purpose agent that loads its role file. A fresh Claude Code session should pick them up.
 - **The Expo MCP local tools** (screenshots, logs) need `expo-mcp` and `EXPO_UNSTABLE_MCP_SERVER=1`. Set them up once a dev build runs.
-- **No GitHub remote yet**, so CI hasn't run. It runs on the first push.
+- **The repo is on GitHub** at `BiboEng/Wayfarer` (private until the Phase 8 secret scan).
+  - The first CI run failed: the server tests read the root tsconfig through `shared/`, and it extends Expo settings that the server-only job doesn't install.
+  - Fixed with a standalone `shared/tsconfig.json`.
+  - Lesson: local runs can hide this because all `node_modules` exist. Test the server job from a fresh clone with only `server/` installed.
 - `C:\Users\bibo2` is itself an empty git repo. The human decides whether to delete it.
 
 ## Setup I've done
