@@ -14,6 +14,11 @@ export function classifyError(err: unknown): { status: number; code: ErrorCode; 
   const raw = typeof e.status === 'number' ? e.status : e.statusCode;
   const status = typeof raw === 'number' && raw >= 400 && raw < 500 ? raw : undefined;
 
+  // Matched by name so this file does not depend on the landmarks module.
+  if (err instanceof Error && err.name === 'LandmarkUpstreamError') {
+    return { status: 502, code: 'UPSTREAM_FAILED', message: 'Landmark data is temporarily unavailable.' };
+  }
+
   if (status !== undefined) {
     const message = e.type === 'entity.parse.failed' ? 'Malformed JSON body.' : 'Bad request.';
     return { status, code: 'BAD_REQUEST', message };

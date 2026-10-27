@@ -1,0 +1,40 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "pageid": 19298854,
+        "ns": 0,
+        "title": "Canton of Auzances",
+        "index": -1,
+        "coordinates": [
+          {
+            "lat": 45.99305556,
+            "lon": 2.4825,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "The Canton of Auzances is a canton situated in the Creuse département and in the Nouvelle-Aquitaine region of central France.",
+        "pageprops": {
+          "wikibase_item": "Q1451042"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:38:14Z",
+        "lastrevid": 1376116145,
+        "length": 3108,
+        "fullurl": "https://en.wikipedia.org/wiki/Canton_of_Auzances",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Canton_of_Auzances&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Canton_of_Auzances"
+      }
+    ]
+  },
+  "limits": {
+    "coordinates": 500,
+    "extracts": 20,
+    "pageimages": 50
+  }
+}

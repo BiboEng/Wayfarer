@@ -5,8 +5,12 @@
  */
 export const APP_TOKEN_HEADER = 'x-wayfarer-token';
 
-/** Server routes. Phase 2 and 3 add landmark and narration routes here. */
+/** Server routes. Phase 3 adds the narration route here. */
 export const ENDPOINTS = {
   /** Public (no app token) so the host's health check can reach it. */
   health: '/health',
+  /** GET, see `NearbyLandmarksQuery` / `NearbyLandmarksResponse`. */
+  landmarksNearby: '/landmarks/nearby',
+  /** GET, see `NearestLandmarkQuery` / `NearestLandmarkResponse`. */
+  landmarksNearest: '/landmarks/nearest',
 } as const;

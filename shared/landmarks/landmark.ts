@@ -1,4 +1,3 @@
-// DRAFT: finalized by the Lead in Phase 2. Code against it, but expect changes.
 import type { LatLng } from '../geo/lat-lng';
 
 export type LandmarkKind =
@@ -9,13 +8,18 @@ export type LandmarkKind =
   | 'bridge'
   | 'square'
   | 'museum'
+  | 'castle'
+  | 'archaeological_site'
   | 'other';
 
 export interface WikipediaInfo {
   pageId: number;
   title: string;
   url: string;
-  /** Plain-text extract; the narration is grounded in this. */
+  /**
+   * Plain-text intro of the article, at most WIKIPEDIA_EXTRACT_MAX_CHARS long.
+   * The narration is grounded in this, so the cap also bounds the AI input.
+   */
   extract: string;
   thumbnailUrl?: string;
 }
@@ -26,6 +30,8 @@ export interface Landmark {
   name: string;
   location: LatLng;
   kind: LandmarkKind;
+  /** Wikidata item id, e.g. "Q12506". The main key for merging sources. */
+  wikidataId?: string;
   wikipedia?: WikipediaInfo;
   /** Selected OpenStreetMap tags (historic, tourism, amenity, ...). */
   osmTags?: Record<string, string>;

@@ -1,0 +1,276 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "pageid": 42764,
+        "ns": 0,
+        "title": "Hagia Sophia",
+        "index": -1,
+        "coordinates": [
+          {
+            "lat": 41.00833333,
+            "lon": 28.98,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "Hagia Sophia, officially the Hagia Sophia Grand Mosque, is a mosque and a major cultural and historical site in Istanbul, Turkey. It was formerly a church (360–1453) and a museum (1935–2020). The last of three church buildings to be successively erected on the site by the Eastern Roman Empire, it was completed in AD 537, becoming the world's largest interior space and among the first to employ a fully pendentive dome. It is considered the epitome of Byzantine architecture and is said to have \"changed the history of architecture\". From its dedication in 360 until 1453, Hagia Sophia served as the cathedral of Constantinople in the Byzantine liturgical tradition, except for the period 1204–1261 when the Latin Crusaders installed their own hierarchy. After the fall of Constantinople in 1453, it served as a mosque, having its minarets added soon after. The site became a museum in 1935, and was redesignated as a mosque in 2020.\nThe current structure was built by the Byzantine emperor Justinian I as the Christian basilica of Constantinople between 532–537 and was designed by the Greek geometers Isidore of Miletus and Anthemius of Tralles. It was formally called the Temple of God's Holy Wisdom, (Greek: Ναὸς τῆς Ἁγίας τοῦ Θεοῦ Σοφίας, romanized: Naòs tês Hagías toû Theoû Sophías) the third church of the same name to occupy the site, as the prior one had been destroyed in the Nika riots. As the episcopal see of the ecumenical patriarch of Constantinople, it remained the world's largest church for more than five hundred years, until the abbey church at Cluny was completed in the 12th century.\nHagia Sophia became the quintessential model for Eastern Orthodox church architecture, and its architectural style was emulated by Ottoman mosques a thousand years later. The Hagia Sophia served as an architectural inspiration for many other religious buildings including the Hagia Sophia in Thessaloniki, Panagia Ekatontapiliani, the Şehzade Mosque, the Süleymaniye Mosque, the Rüstem Pasha Mosque and the Kılıç Ali Pasha Complex.\nAs the religious and spiritual centre of the Eastern Orthodox Church for nearly one thousand years, the church was dedicated to Holy Wisdom. The church has been described as \"holding a unique position in the Christian world\", and as \"an architectural and cultural icon of Byzantine and Eastern Orthodox civilization\". It was where the excommunication of Patriarch Michael I Cerularius was officially delivered by Humbert of Silva Candida, the envoy of Pope Leo IX in 1054, an act considered the start of the East–West Schism. In 1204, it was converted during the Fourth Crusade into a Catholic cathedral under the Latin Empire, before being restored to the Eastern Orthodox Church upon the restoration of the Byzantine Empire in 1261. Enrico Dandolo, the doge of Venice who led the Fourth Crusade and the 1204 Sack of Constantinople, was buried in the church.\nAfter the fall of Constantinople to the Ottoman Empire in 1453, it was converted to a mosque by Mehmed the Conqueror and became the principal mosque of Istanbul until the 1616 construction of the Sultan Ahmed Mosque. The patriarchate moved to the Church of the Holy Apostles, which became the city's cathedral. The complex remained a mosque until 1931, when it was closed to the public for four years. It was re-opened in 1935 as a museum under the secular Republic of Turkey, and the building was Turkey's most visited tourist attraction as of 2019. In 2020, the Council of State annulled the 1934 decision to establish the museum, and the Hagia Sophia was reclassified as a mosque. The decision was highly controversial, sparking divided opinions and drawing condemnation from the Turkish opposition, UNESCO, the World Council of Churches and the International Association of Byzantine Studies, as well as numerous international leaders, while several Muslim leaders in Turkey and other countries welcomed its conversion.",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Hagia_Sophia_%28228968325%29.jpeg/330px-Hagia_Sophia_%28228968325%29.jpeg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 193
+        },
+        "pageprops": {
+          "wikibase_item": "Q12506"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:14:07Z",
+        "lastrevid": 1379544167,
+        "length": 221299,
+        "fullurl": "https://en.wikipedia.org/wiki/Hagia_Sophia",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Hagia_Sophia&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Hagia_Sophia"
+      },
+      {
+        "pageid": 226898,
+        "ns": 0,
+        "title": "Sublime Porte",
+        "index": 0,
+        "coordinates": [
+          {
+            "lat": 41.01111111,
+            "lon": 28.97805556,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "The Sublime Porte, also known as the Ottoman Porte or High Porte (Ottoman Turkish: باب عالی, romanized: Bâb-ı Âlî or Babıali; Turkish pronunciation: [baːbɯˈaːliː]), was a metonymy used to refer collectively to the central government of the Ottoman Empire in Istanbul. It particularly referred to the building which housed the office of the Grand Vizier, Ministry of Foreign Affairs, Ministry of the Interior, and the Supreme Council of Judicial Ordinances. Today it houses the office of the Istanbul governorate.",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Istanbul_asv2020-02_img37_Governors_Office.jpg/330px-Istanbul_asv2020-02_img37_Governors_Office.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 200
+        },
+        "pageprops": {
+          "wikibase_item": "Q18871"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:15:22Z",
+        "lastrevid": 1381192307,
+        "length": 6563,
+        "fullurl": "https://en.wikipedia.org/wiki/Sublime_Porte",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Sublime_Porte&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Sublime_Porte"
+      },
+      {
+        "pageid": 1365761,
+        "ns": 0,
+        "title": "Basilica Cistern",
+        "index": 1,
+        "coordinates": [
+          {
+            "lat": 41.00805556,
+            "lon": 28.97777778,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "The Basilica Cistern, or Cisterna Basilica (Greek: Βασιλική Κινστέρνα, Turkish: Yerebatan Sarnıcı or Yerebatan Sarayı, \"Subterranean Cistern\" or \"Subterranean Palace\"), is the largest of several hundred ancient cisterns that lie beneath the city of Istanbul, Turkey. The cistern, located 150 metres (490 ft) southwest of the Hagia Sophia on the historical peninsula of Sarayburnu, was built in the 6th century during the reign of Byzantine emperor Justinian I. Today, it is kept with little water for public access inside the space.",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Cisterna_Bas%C3%ADlica%2C_Estambul%2C_Turqu%C3%ADa%2C_2024-09-28%2C_DD_58-60_HDR.jpg/330px-Cisterna_Bas%C3%ADlica%2C_Estambul%2C_Turqu%C3%ADa%2C_2024-09-28%2C_DD_58-60_HDR.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 495
+        },
+        "pageprops": {
+          "wikibase_item": "Q216511"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:18:49Z",
+        "lastrevid": 1365846547,
+        "length": 18024,
+        "fullurl": "https://en.wikipedia.org/wiki/Basilica_Cistern",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Basilica_Cistern&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Basilica_Cistern"
+      },
+      {
+        "pageid": 2969846,
+        "ns": 0,
+        "title": "Hagia Irene",
+        "index": 2,
+        "coordinates": [
+          {
+            "lat": 41.00972222,
+            "lon": 28.98111111,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "Hagia Irene (Greek: Αγία Ειρήνη) or Hagia Eirene (Medieval Greek: Ἁγία Εἰρήνη Ancient Greek pronunciation: [aˈʝia iˈrini], \"Holy Peace\", Turkish: Aya İrini), sometimes known also as Saint Irene, is a former Eastern Orthodox church located in the outer courtyard of Topkapı Palace in Istanbul. It is the oldest known church structure in the city and one of only two Byzantine churches still standing in Istanbul today that were never converted into mosques, alongside the Church of Saint Mary of the Mongols, as it was used as an arsenal for storing weapons until the 19th century. The Hagia Irene now operates as a museum and concert hall.",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/Hagia_Irene%2C_Istanbul_%2852112279404%29_%28cropped%29.jpg/330px-Hagia_Irene%2C_Istanbul_%2852112279404%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 224
+        },
+        "pageprops": {
+          "wikibase_item": "Q736676"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:21:59Z",
+        "lastrevid": 1367241356,
+        "length": 29452,
+        "fullurl": "https://en.wikipedia.org/wiki/Hagia_Irene",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Hagia_Irene&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Hagia_Irene"
+      },
+      {
+        "pageid": 5091774,
+        "ns": 0,
+        "title": "Zeynep Sultan Mosque",
+        "index": 3,
+        "coordinates": [
+          {
+            "lat": 41.0097,
+            "lon": 28.979,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "The Zeynep Sultan Mosque (Turkish: Zeynep Sultan Camii) is a mosque in Istanbul, Turkey. It was built in 1769 by Ayazma Mosque's architect Mehmet Tahir Ağa for Ahmed III's daughter Zeynep Sultan. It evokes Byzantine churches because of its architectural style and materials that were used in its construction.",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/15/Zeynep_Sultan_Mosque.jpg/330px-Zeynep_Sultan_Mosque.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 238
+        },
+        "pageprops": {
+          "wikibase_item": "Q1153320"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:24:58Z",
+        "lastrevid": 1367243292,
+        "length": 4010,
+        "fullurl": "https://en.wikipedia.org/wiki/Zeynep_Sultan_Mosque",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Zeynep_Sultan_Mosque&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Zeynep_Sultan_Mosque"
+      },
+      {
+        "pageid": 7017612,
+        "ns": 0,
+        "title": "German Fountain",
+        "index": 4,
+        "coordinates": [
+          {
+            "lat": 41.0071,
+            "lon": 28.9767,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "The German Fountain (Turkish: Alman Çeşmesi; German: Deutscher Brunnen) is a gazebo styled fountain in the northern end of the former Hippodrome of Constantinople (Sultanahmet Square) in Istanbul and across from the Mausoleum of Sultan Ahmed I. It was constructed to commemorate the second anniversary of German Emperor Wilhelm II's visit to Istanbul in 1898. It was built in Germany, then transported piece by piece and assembled on its current site in 1900. The neo-Byzantine style fountain's octagonal dome has eight marble columns, and dome's interior is covered with golden mosaics.",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/Istanbul_asv2021-11_img36_German_Fountain.jpg/330px-Istanbul_asv2021-11_img36_German_Fountain.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 480
+        },
+        "pageprops": {
+          "wikibase_item": "Q322920"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:27:42Z",
+        "lastrevid": 1381848757,
+        "length": 10590,
+        "fullurl": "https://en.wikipedia.org/wiki/German_Fountain",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=German_Fountain&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/German_Fountain"
+      },
+      {
+        "pageid": 8003409,
+        "ns": 0,
+        "title": "Pudding Shop",
+        "index": 5,
+        "coordinates": [
+          {
+            "lat": 41.00805,
+            "lon": 28.97719,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "The Pudding Shop is the nickname for the Lale Restaurant in Sultanahmet, Istanbul, Turkey. It became popular in the 1960s as a meeting place for beatniks and, later on, hippies and other travellers on overland route between Europe and India, Nepal, and elsewhere in Asia: the \"hippie trail\". The restaurant got its colloquial name as a result of \"word of mouth\" from numerous foreign travellers that could not remember the name of the restaurant but did remember the wide and popular selection of puddings sold there and thus referred to it as the \"pudding shop\".",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1f/The_Pudding_shop_1982_and_2012_-_50449732222_%28cropped%29_1982.jpg/330px-The_Pudding_shop_1982_and_2012_-_50449732222_%28cropped%29_1982.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 212
+        },
+        "pageprops": {
+          "wikibase_item": "Q3410532"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:28:41Z",
+        "lastrevid": 1342263431,
+        "length": 5501,
+        "fullurl": "https://en.wikipedia.org/wiki/Pudding_Shop",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Pudding_Shop&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Pudding_Shop"
+      },
+      {
+        "pageid": 8385717,
+        "ns": 0,
+        "title": "Historic Areas of Istanbul",
+        "index": 6,
+        "coordinates": [
+          {
+            "lat": 41.00846944,
+            "lon": 28.97993056,
+            "primary": true,
+            "globe": "earth"
+          }
+        ],
+        "extract": "The Historic Areas of Istanbul (Turkish: İstanbul'un Tarihî Alanları; Ottoman Turkish: استانبولك تاریخي اﻻنلری) are a group of sites in the capital district of Fatih in the city of Istanbul, Turkey, that were added to the UNESCO World Heritage List in 1985.\nIt includes buildings and structures such as the Sarayburnu, the Topkapı Palace, the Hagia Sophia, the Sultan Ahmed Mosque, the Hagia Irene, Zeyrek Mosque, Süleymaniye Mosque, Little Hagia Sophia and the walls of Constantinople.",
+        "thumbnail": {
+          "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5e/Istanbul2010.jpg/330px-Istanbul2010.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+          "width": 320,
+          "height": 240
+        },
+        "pageprops": {
+          "wikibase_item": "Q5773394"
+        },
+        "contentmodel": "wikitext",
+        "pagelanguage": "en",
+        "pagelanguagehtmlcode": "en",
+        "pagelanguagedir": "ltr",
+        "touched": "2026-10-26T19:29:00Z",
+        "lastrevid": 1381734691,
+        "length": 3463,
+        "fullurl": "https://en.wikipedia.org/wiki/Historic_Areas_of_Istanbul",
+        "editurl": "https://en.wikipedia.org/w/index.php?title=Historic_Areas_of_Istanbul&action=edit",
+        "canonicalurl": "https://en.wikipedia.org/wiki/Historic_Areas_of_Istanbul"
+      }
+    ]
+  },
+  "limits": {
+    "coordinates": 500,
+    "extracts": 20,
+    "pageimages": 50
+  }
+}

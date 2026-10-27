@@ -6,6 +6,9 @@ const envSchema = z.object({
   APP_TOKEN: z.string().min(16),
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(60),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+  UPSTREAM_CONTACT: z.string().trim().min(1),
+  CACHE_PATH: z.string().trim().min(1).optional(),
+  OVERPASS_URL: z.url().default('https://overpass-api.de/api/interpreter'),
 });
 
 export interface ServerConfig {
@@ -15,6 +18,11 @@ export interface ServerConfig {
   rateLimitPerMinute: number;
   /** Number of reverse-proxy hops in front of the server. */
   trustProxy: number;
+  /** Contact info (email or repo URL) sent in the User-Agent of upstream calls. */
+  contact: string;
+  /** SQLite file for the persistent cache; null means in-memory. */
+  cachePath: string | null;
+  overpassUrl: string;
 }
 
 /** Thrown by parseEnv. The message names the bad variables, never their values. */
@@ -44,5 +52,8 @@ export function parseEnv(source: Record<string, string | undefined>): ServerConf
     appToken: env.APP_TOKEN,
     rateLimitPerMinute: env.RATE_LIMIT_PER_MINUTE,
     trustProxy: env.TRUST_PROXY,
+    contact: env.UPSTREAM_CONTACT,
+    cachePath: env.CACHE_PATH ?? null,
+    overpassUrl: env.OVERPASS_URL,
   };
 }

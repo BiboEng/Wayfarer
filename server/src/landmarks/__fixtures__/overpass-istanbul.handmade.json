@@ -1,0 +1,79 @@
+{
+  "version": 0.6,
+  "generator": "HAND-MADE test fixture in the documented Overpass JSON format (not a recorded response)",
+  "osm3s": { "copyright": "none: hand-made" },
+  "elements": [
+    {
+      "type": "node",
+      "id": 1001,
+      "lat": 41.0085,
+      "lon": 28.9801,
+      "tags": {
+        "name": "Ayasofya",
+        "amenity": "place_of_worship",
+        "historic": "building",
+        "religion": "muslim",
+        "wikidata": "Q12506",
+        "wikipedia": "tr:Ayasofya",
+        "building": "yes",
+        "addr:street": "Sultanahmet Meydani"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2002,
+      "center": { "lat": 41.00806, "lon": 28.97778 },
+      "nodes": [1, 2, 3],
+      "tags": {
+        "name": "Yerebatan Sarnici",
+        "tourism": "museum",
+        "historic": "building",
+        "wikipedia": "en:Basilica Cistern",
+        "wikidata": "Q216511"
+      }
+    },
+    {
+      "type": "relation",
+      "id": 3003,
+      "center": { "lat": 41.0086, "lon": 28.9799 },
+      "members": [],
+      "tags": {
+        "name": "Historic Areas of Istanbul",
+        "historic": "district",
+        "type": "multipolygon",
+        "wikidata": "Q5773394"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4004,
+      "lat": 41.0087,
+      "lon": 28.9805,
+      "tags": { "historic": "memorial", "inscription": "unnamed on purpose" }
+    },
+    {
+      "type": "node",
+      "id": 5005,
+      "lat": 40.6333,
+      "lon": 22.9531,
+      "tags": {
+        "name": "Ayasofya",
+        "amenity": "place_of_worship",
+        "historic": "building",
+        "note": "same name as 1001 but a different city: must not merge"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6006,
+      "lat": 41.0104,
+      "lon": 28.9768,
+      "tags": { "name": "Hand-made Bridge", "bridge": "yes", "wikidata": "not-an-id", "ref": 12 }
+    },
+    {
+      "type": "node",
+      "id": 7007,
+      "tags": { "name": "Node without coordinates", "historic": "monument" }
+    }
+  ]
+}

@@ -5,9 +5,14 @@ import { errorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { healthRouter } from './routes/health';
+import { createLandmarksRouter, type LandmarkLookup } from './routes/landmarks';
+
+export interface AppDeps {
+  landmarks: LandmarkLookup;
+}
 
 /** Builds the Express app without listening, so tests can drive it directly. */
-export function createApp(config: ServerConfig): express.Express {
+export function createApp(config: ServerConfig, deps: AppDeps): express.Express {
   const app = express();
 
   app.disable('x-powered-by');
@@ -23,7 +28,9 @@ export function createApp(config: ServerConfig): express.Express {
   // After the token check, so unauthenticated requests never get their bodies parsed.
   app.use(express.json({ limit: '10kb' }));
 
-  // Future phases: landmark and narration routers are mounted here.
+  app.use(createLandmarksRouter(deps.landmarks));
+
+  // Future phases: the narration router is mounted here.
 
   app.use(notFoundHandler);
   app.use(errorHandler);

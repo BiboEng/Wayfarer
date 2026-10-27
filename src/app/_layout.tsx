@@ -26,6 +26,9 @@ export default function RootLayout() {
         <Stack.Screen name="tour" options={{ title: 'Live Tour' }} />
         <Stack.Screen name="explore" options={{ title: 'Explore the World' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        <Stack.Protected guard={__DEV__}>
+          <Stack.Screen name="debug/landmarks" options={{ title: 'Landmark debug' }} />
+        </Stack.Protected>
       </Stack>
     </ThemeProvider>
   );

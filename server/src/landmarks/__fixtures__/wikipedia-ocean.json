@@ -1,0 +1,8 @@
+{
+  "batchcomplete": true,
+  "limits": {
+    "coordinates": 500,
+    "extracts": 20,
+    "pageimages": 50
+  }
+}

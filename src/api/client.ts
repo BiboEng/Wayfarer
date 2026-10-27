@@ -19,16 +19,22 @@ export interface ApiClientOptions {
   fetchFn?: typeof fetch;
 }
 
+export interface RequestOptions {
+  /** Overrides the client's default timeout for this call. */
+  timeoutMs?: number;
+}
+
 export interface ApiClient {
-  get<T>(path: string): Promise<ApiResult<T>>;
+  get<T>(path: string, options?: RequestOptions): Promise<ApiResult<T>>;
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 export function createApiClient(options: ApiClientOptions): ApiClient {
-  const { baseUrl, appToken, timeoutMs = DEFAULT_TIMEOUT_MS, fetchFn = fetch } = options;
+  const { baseUrl, appToken, timeoutMs: defaultTimeoutMs = DEFAULT_TIMEOUT_MS, fetchFn = fetch } = options;
 
-  async function get<T>(path: string): Promise<ApiResult<T>> {
+  async function get<T>(path: string, request: RequestOptions = {}): Promise<ApiResult<T>> {
+    const timeoutMs = request.timeoutMs ?? defaultTimeoutMs;
     if (!baseUrl) {
       return fail('NOT_CONFIGURED', 'Server URL is not configured.');
     }
@@ -42,7 +48,9 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         signal: controller.signal,
       });
       return await readResponse<T>(response);
-    } catch {
+    } catch (err) {
+      // Dev-only: the underlying reason (cleartext blocked, DNS, refused...) is otherwise lost.
+      if (__DEV__) console.warn(`[api] GET ${path} failed:`, err);
       return controller.signal.aborted
         ? fail('TIMEOUT', 'The server took too long to respond.')
         : fail('NETWORK_ERROR', 'Could not reach the server.');

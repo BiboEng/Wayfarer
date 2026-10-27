@@ -62,6 +62,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     typedRoutes: true,
     reactCompiler: true,
   },
-  // After `eas init`, paste the project id here:
-  // extra: { eas: { projectId: '<your-project-id>' } },
+  // EAS project @biboeng/wayfarer. The id is not secret.
+  extra: { eas: { projectId: '9f16b3ba-db67-4a8c-9d23-8aed8ae9bddf' } },
+  owner: 'biboeng',
 });

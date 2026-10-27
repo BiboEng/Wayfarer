@@ -1,6 +1,8 @@
 import { createApp } from './app';
 import { EnvError, parseEnv, type ServerConfig } from './config/env';
 import { loadEnvFile } from './config/load-env-file';
+import { createCacheStore } from './cache/create-cache-store';
+import { createLandmarkService } from './landmarks';
 
 function main(): void {
   loadEnvFile();
@@ -16,7 +18,13 @@ function main(): void {
     throw err;
   }
 
-  const app = createApp(config);
+  const landmarks = createLandmarkService({
+    contact: config.contact,
+    overpassUrl: config.overpassUrl,
+    cache: createCacheStore(config.cachePath),
+  });
+
+  const app = createApp(config, { landmarks });
   app.listen(config.port, config.host, () => {
     console.log(`Wayfarer server listening on ${config.host}:${config.port}`);
   });

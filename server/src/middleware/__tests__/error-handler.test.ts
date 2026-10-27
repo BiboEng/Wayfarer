@@ -18,6 +18,14 @@ describe('classifyError', () => {
     expect(classifyError({ statusCode: 415 })).toMatchObject({ status: 415, code: 'BAD_REQUEST' });
   });
 
+  it('maps LandmarkUpstreamError (by name) to 502 UPSTREAM_FAILED with a generic message', () => {
+    const err = new Error('overpass: HTTP 503 https://secret.example');
+    err.name = 'LandmarkUpstreamError';
+    const result = classifyError(err);
+    expect(result).toMatchObject({ status: 502, code: 'UPSTREAM_FAILED' });
+    expect(result.message).not.toContain('secret');
+  });
+
   it('maps everything else to 500 INTERNAL with a generic message', () => {
     for (const err of [new Error('db password is hunter2'), { status: 503 }, { status: 302 }, 'string', null, undefined, 42]) {
       const result = classifyError(err);

@@ -5,18 +5,31 @@ import { isApiError } from '@shared/api/errors';
 import pkg from '../../package.json';
 import { createApp } from '../app';
 import type { ServerConfig } from '../config/env';
+import type { LandmarkLookup } from '../routes/landmarks';
 
 const TEST_TOKEN = 'test-token-0123456789abcdef';
 
+/** Never reached by these tests; landmark routes have their own tests. */
+const idleLandmarks: LandmarkLookup = {
+  findNearby: () => Promise.resolve([]),
+  findNearest: () => Promise.resolve({ landmark: null, searchedRadiusMeters: 0 }),
+};
+
 function makeApp(overrides: Partial<ServerConfig> = {}) {
-  return createApp({
-    port: 0,
-    host: '127.0.0.1',
-    appToken: TEST_TOKEN,
-    rateLimitPerMinute: 1000,
-    trustProxy: 0,
-    ...overrides,
-  });
+  return createApp(
+    {
+      port: 0,
+      host: '127.0.0.1',
+      appToken: TEST_TOKEN,
+      rateLimitPerMinute: 1000,
+      trustProxy: 0,
+      contact: 'test@example.com',
+      cachePath: null,
+      overpassUrl: 'https://overpass.example.org/api/interpreter',
+      ...overrides,
+    },
+    { landmarks: idleLandmarks },
+  );
 }
 
 function expectApiError(body: unknown, code: string): void {

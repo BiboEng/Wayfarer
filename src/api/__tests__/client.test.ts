@@ -141,6 +141,51 @@ describe('createApiClient', () => {
       await expect(pending).resolves.toMatchObject({ ok: false, error: { code: 'TIMEOUT' } });
     });
 
+    const hanging = () =>
+      mockFetch(
+        (_url, init) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+          }),
+      );
+
+    it('lets a per-call timeoutMs override the client default (longer)', async () => {
+      const client = createApiClient({ baseUrl: BASE, appToken: TOKEN, timeoutMs: 5000, fetchFn: hanging() });
+      const pending = client.get('/slow', { timeoutMs: 20_000 });
+      let settled = false;
+      void pending.then(() => {
+        settled = true;
+      });
+      await jest.advanceTimersByTimeAsync(19_999);
+      expect(settled).toBe(false); // the 5 s default would have fired long ago
+      await jest.advanceTimersByTimeAsync(1);
+      await expect(pending).resolves.toMatchObject({ ok: false, error: { code: 'TIMEOUT' } });
+    });
+
+    it('lets a per-call timeoutMs override the client default (shorter)', async () => {
+      const client = createApiClient({ baseUrl: BASE, appToken: TOKEN, timeoutMs: 5000, fetchFn: hanging() });
+      const pending = client.get('/slow', { timeoutMs: 1000 });
+      await jest.advanceTimersByTimeAsync(1000);
+      await expect(pending).resolves.toMatchObject({ ok: false, error: { code: 'TIMEOUT' } });
+    });
+
+    it('does not change the default for later calls without options', async () => {
+      const client = createApiClient({ baseUrl: BASE, appToken: TOKEN, timeoutMs: 5000, fetchFn: hanging() });
+      const first = client.get('/slow', { timeoutMs: 20_000 });
+      const second = client.get('/slow');
+      await jest.advanceTimersByTimeAsync(5000);
+      await expect(second).resolves.toMatchObject({ ok: false, error: { code: 'TIMEOUT' } });
+      await jest.advanceTimersByTimeAsync(15_000);
+      await expect(first).resolves.toMatchObject({ ok: false, error: { code: 'TIMEOUT' } });
+    });
+
+    it('falls back to the client default when options has no timeoutMs', async () => {
+      const client = createApiClient({ baseUrl: BASE, appToken: TOKEN, timeoutMs: 5000, fetchFn: hanging() });
+      const pending = client.get('/slow', {});
+      await jest.advanceTimersByTimeAsync(5000);
+      await expect(pending).resolves.toMatchObject({ ok: false, error: { code: 'TIMEOUT' } });
+    });
+
     it('does not time out (and clears its timer) when the response arrives in time', async () => {
       const fetchFn = mockFetch(async () => jsonResponse({ ok: 1 }));
       const client = createApiClient({ baseUrl: BASE, appToken: TOKEN, timeoutMs: 5000, fetchFn });
