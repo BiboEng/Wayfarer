@@ -30,7 +30,7 @@ Spec: `docs/BRIEF.md` — never edit it without the human's approval. Status log
 ## File ownership
 | Owner | Paths |
 |---|---|
-| Lead | `shared/`, `src/api/`, `src/config/`, `docs/`, `.github/`, `.claude/`, `CLAUDE.md`, `AGENTS.md`, root config (`package.json` scripts, `app.json` / `app.config.ts`, `eas.json`, `tsconfig.json`, lint config, `.gitignore`) |
+| Lead | `shared/`, `src/api/`, `src/config/`, `src/explore/`, `docs/`, `.github/`, `.claude/`, `CLAUDE.md`, `AGENTS.md`, root config (`package.json` scripts, `app.json` / `app.config.ts`, `eas.json`, `tsconfig.json`, lint config, `.gitignore`) |
 | mobile-ui | `src/app/`, `src/components/`, `src/theme/`, `src/hooks/`, `assets/` |
 | tour-engine | `src/tour/`, `src/location/`, `src/audio/`, `src/dev/` |
 | landmark-data | `server/src/landmarks/` |

@@ -1,10 +1,10 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { formatDistance } from '@/components/format/format-distance';
 import type { LandmarkSearchState } from '@/hooks/use-landmark-search';
 import { colors, spacing } from '@/theme';
 
-import { formatDistance } from './format-distance';
 import { LandmarkRow } from './landmark-row';
 
 /** Shows the idle hint, spinner, error, empty state or the result rows. */
