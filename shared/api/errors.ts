@@ -2,6 +2,8 @@ export const ERROR_CODES = [
   'BAD_REQUEST',
   'UNAUTHORIZED',
   'NOT_FOUND',
+  /** 422: the landmark has no Wikipedia text to ground a narration in. */
+  'NOT_NARRATABLE',
   'RATE_LIMITED',
   'UPSTREAM_FAILED',
   'INTERNAL',

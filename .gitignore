@@ -51,6 +51,8 @@ example
 server/.env
 server/.env.*
 !server/.env.example
+# Output of server/scripts/sample-narration.ts
+server/sample.mp3
 
 # Android signing & EAS local credentials
 *.keystore

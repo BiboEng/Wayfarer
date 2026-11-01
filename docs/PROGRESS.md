@@ -1,6 +1,16 @@
 # Wayfarer — Progress
 
 ## Current status
+**Phase 3 (narration pipeline) is done, except the deploy, which moves to Phase 6** (see Decisions). Reviewed with no blockers; `npm run check` passes (142 app tests, 807 server tests). The human ran the sample script with OpenRouter and ElevenLabs (2026-10-31).
+- **Server:** `POST /narration` takes a landmark id + length + travel mode + voice. It reloads the landmark with `getById`, writes the story with OpenRouter (`OPENROUTER_MODEL`, default `google/gemini-2.5-flash-lite`, about $0.00015 a story) and makes audio through `TTSProvider` (`elevenlabs` or `none`). Text and audio are cached by landmark + length + mode + voice + prompt version. Daily caps (`DAILY_LLM_CALL_CAP`, `DAILY_TTS_CHAR_CAP`) fall back to the Wikipedia intro or to text only. Narration has its own per-IP rate limit. `GET /voices` lists voices. `server/scripts/sample-narration.ts` narrates one landmark and prints the cost.
+- **App:** `src/api/narration.ts`, `src/hooks/use-narration.ts`, and a Narrate panel on the landmark debug screen (text only; playback comes in Phase 4).
+- **Deploy files ready:** `server/Dockerfile`, `railway.json`.
+- **Review follow-ups (should-fix, not blockers):**
+  - In memory mode (no `CACHE_PATH`), the daily cap counters can be evicted or reset by a restart. Give them a non-evicting store, and set `CACHE_PATH`/`AUDIO_DIR` in the Dockerfile.
+  - An unknown voice id fails the whole narration; fall back to the default voice.
+  - The sample script prints no dollar estimate for ElevenLabs.
+  - Nits: drop a cut-off last sentence when `finishReason` is `length`; add the model to the cache key; the voice timeout can push past the app's 45 s; walking short/long fall slightly outside the brief's 60–90 s; rename the `sk-or-` fake test key (gitleaks).
+
 **Phase 2 (landmark discovery) is done.** Reviewed, `npm run check` passes (115 app tests, 419 server tests), and the human tested the debug screen on their phone in the first dev build (2026-10-27).
 - **Contract:** `Landmark` and `LandmarkProvider` are final (adds `wikidataId`, `castle`, `archaeological_site`, `getById`). `shared/landmarks/search.ts` holds the radius limits and Explore steps; `shared/geo/distance.ts` is the shared haversine. Routes `GET /landmarks/nearby` and `GET /landmarks/nearest` (`null` = nothing found, a 200).
 - **Server:** `server/src/landmarks/` merges Wikipedia GeoSearch (one call, ≤20 pages with intro extracts) with Overpass (Wikidata id → en title → name within 75 m). Time budgets: nearby 8 s (Overpass ≤6 s, no retry), nearest 16 s. One source failing gives partial results, cached 10 min; full results 7 days, empty 1 day; errors never cached. `server/src/cache/` has the `CacheStore` with memory and `node:sqlite` stores (`CACHE_PATH`), purging expired rows.
@@ -30,6 +40,7 @@
   - The app relies on Metro and tsconfig paths; Jest has an explicit `moduleNameMapper`.
   - The server resolves it with tsx in dev, and tsup inlines it into the bundle. Reason: no workspaces needed, nothing to publish. (Approved.)
 - **Backend on Railway Hobby with a persistent volume.** It must build from the repo root so `shared/` is included. (Approved.)
+- **Server deploy postponed from Phase 3 to the start of Phase 6 at the latest** (human approved 2026-10-31; deviates from Part D). Reason: Phases 4–5 can be tested at the desk over home Wi-Fi (Phase 5 has the route simulator), and Railway paused new signups after its 2026-10-21 security incident, so the host may change. Phase 6 needs the phone to reach the server over mobile data. A Cloudflare Tunnel from the laptop works as a stopgap. `server/Dockerfile` and `railway.json` stay ready.
 - **Subagent models:** sonnet for mobile-ui, landmark-data, backend and qa; the session model for tour-engine and reviewer. (Approved.)
 - **Package id `com.biboeng.wayfarer`.** It's tied to the Maps key restriction.
 - **Native modules installed up front:** maps, location, task-manager, audio, speech, async-storage, dev-client. One dev build covers Phases 1–5; Phase 6 permissions mean one rebuild. (Human approved; deviates from the per-phase installs in Part D.)
@@ -44,7 +55,11 @@
 - **Overpass (OpenStreetMap) was down or at capacity throughout Phase 2 testing** (2026-10-26; main server and two mirrors). The fallback to Wikipedia-only results works, but merging has only been tested on a hand-made fixture. Re-run `server/src/landmarks/__fixtures__/record.ts` when it recovers. If it stays unreliable, get landmark types from Wikidata instead (every Wikipedia result has a Wikidata id).
 - **Wikipedia returns geotagged events** (e.g. "740 Constantinople earthquake") as landmarks. Phase 5 ranking must push down results with no OSM match / non-place articles.
 - **Wikipedia is capped at the 20 nearest pages** (`exlimit`). Fine for walking and Explore; for 1–2 km driving radii, revisit in Phase 5 (wider geosearch, extracts only for the top-ranked).
-- **Phase 3 to-dos from Phase 2:** call `CacheStore.close()` on shutdown; the narration endpoint must use `getById` and never trust text from the app.
+- **Phase 3 to-dos from Phase 2:** done (caches close on shutdown; narration looks the landmark up with `getById`).
+- **Phase 3 prompt review (2026-10-31, Lead):** prompt v2 (sentence-count target, use the material fully, end early instead of padding, years as digits, rulers' numbers as words). `cleanNarration` strips AD/CE next to years. Measured on six Istanbul places: medium walking went from 64% to 80–100% of target with flash-lite; `google/gemini-2.5-flash` hits the target more reliably and keeps more detail. The human chose to keep flash-lite (cheapest); switching is one line in `.env`. The Lead edited backend-owned `server/src/narration/prompt.ts` and `clean-text.ts` and their tests, since the review needed live iteration.
+- **"Long" narrations run short (55–70%)** because only the Wikipedia intro is sent. Fix later (Phase 5 or 7): send more of the article for the top-ranked landmark.
+- **Wikipedia pages without coordinates (e.g. Galata Tower) can't be narrated by id.** `getById` returns null. Revisit if OSM-matched landmarks need it.
+- **ElevenLabs free plan can't use Voice Library voices over the API** (HTTP 402). Using the premade voice George (`JBFqnCBsd6RMkjVDRZzb`). Library voices need a paid plan.
 - **Lead edited outside its paths in Phase 2** (`server/src/index.ts` wiring, a one-character fix in `server/src/landmarks/merge.ts`, a one-line typed-href fix in `src/app/settings.tsx`), all small and noted here.
 - **Expo Go can't open the project** (phone has SDK 58 Expo Go, project is SDK 57). Use the dev build.
 - **First dev build has no Google Maps key**, so maps are blank. Do SETUP §3 (the keystore SHA-1 is on expo.dev → Credentials) and rebuild before Phase 4.
@@ -56,7 +71,7 @@
   - The first CI run failed: the server tests read the root tsconfig through `shared/`, and it extends Expo settings that the server-only job doesn't install.
   - Fixed with a standalone `shared/tsconfig.json`.
   - Lesson: local runs can hide this because all `node_modules` exist. Test the server job from a fresh clone with only `server/` installed.
-- `C:\Users\bibo2` is itself an empty git repo. The human decides whether to delete it.
+- The Windows user folder (one level above the project) is itself an empty git repo. The human decides whether to delete it.
 
 ## Setup I've done
 - 2026-10-07: Expo account created. Expo plugin installed and Expo MCP server connected in Claude Code.

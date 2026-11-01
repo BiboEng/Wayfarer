@@ -9,6 +9,7 @@ import { AppText } from '@/components/app-text';
 import { colors, radius, spacing } from '@/theme';
 
 import { formatDistance } from './format-distance';
+import { NarratePanel } from './narrate-panel';
 
 export interface LandmarkRowProps {
   landmark: Landmark;
@@ -49,9 +50,12 @@ export function LandmarkRow({ landmark, origin }: LandmarkRowProps) {
         </View>
       </View>
       {expanded ? (
-        <AppText variant="body" color="textSecondary">
-          {extract || 'No extract available.'}
-        </AppText>
+        <>
+          <AppText variant="body" color="textSecondary">
+            {extract || 'No extract available.'}
+          </AppText>
+          <NarratePanel landmarkId={landmark.id} />
+        </>
       ) : null}
     </Pressable>
   );

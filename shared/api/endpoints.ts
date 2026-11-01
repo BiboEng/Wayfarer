@@ -5,7 +5,7 @@
  */
 export const APP_TOKEN_HEADER = 'x-wayfarer-token';
 
-/** Server routes. Phase 3 adds the narration route here. */
+/** Server routes. */
 export const ENDPOINTS = {
   /** Public (no app token) so the host's health check can reach it. */
   health: '/health',
@@ -13,4 +13,10 @@ export const ENDPOINTS = {
   landmarksNearby: '/landmarks/nearby',
   /** GET, see `NearestLandmarkQuery` / `NearestLandmarkResponse`. */
   landmarksNearest: '/landmarks/nearest',
+  /** POST, see `NarrationRequest` / `NarrationResponse`. Rate-limited more strictly: it costs money. */
+  narrations: '/narrations',
+  /** GET `${narrationAudio}/:key`, audio bytes from the cache only (never triggers TTS). */
+  narrationAudio: '/narrations/audio',
+  /** GET, see `VoicesResponse`. */
+  voices: '/voices',
 } as const;

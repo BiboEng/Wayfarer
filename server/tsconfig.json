@@ -16,6 +16,6 @@
       "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["src/**/*", "../shared/**/*"],
+  "include": ["src/**/*", "scripts/**/*", "../shared/**/*"],
   "exclude": ["../shared/**/__tests__"]
 }

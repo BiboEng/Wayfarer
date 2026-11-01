@@ -1,0 +1,41 @@
+# The server image is built from the repo root (server/Dockerfile). Keep everything it doesn't need out of the context.
+
+# Dependencies and build output (all levels)
+**/node_modules
+**/dist
+**/coverage
+
+# Secrets and local config
+**/.env
+**/.env.*
+**/*.sqlite
+**/*.sqlite-*
+**/*.mp3
+**/data
+
+# Git and tooling
+.git
+.github
+.claude
+.vscode
+.expo
+
+# The Expo app (the server image doesn't use it)
+src
+assets
+docs
+android
+ios
+app.config.ts
+eas.json
+jest.config.js
+expo-env.d.ts
+expo-types.d.ts
+tsconfig.json
+eslint.config.js
+package.json
+package-lock.json
+*.md
+
+# Tests
+**/__tests__

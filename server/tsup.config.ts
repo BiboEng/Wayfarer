@@ -14,4 +14,6 @@ export default defineConfig({
   dts: false,
   // Keep npm dependencies external; they are installed on the host.
   skipNodeModulesBundle: true,
+  // node:sqlite exists only WITH the node: prefix; tsup would strip it to "sqlite", which crashes at runtime.
+  removeNodeProtocol: false,
 });

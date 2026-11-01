@@ -5,11 +5,12 @@ import { isApiError } from '@shared/api/errors';
 import type { NearbyLandmarksResponse, NearestLandmarkResponse } from '@shared/api/landmarks';
 import { NEARBY_RADIUS_MAX_M, NEARBY_RADIUS_MIN_M } from '@shared/landmarks/search';
 import { createApp } from '../../app';
+import { TEST_TOKEN, testConfig, testDeps } from '../../__fixtures__/test-app';
 import { LandmarkUpstreamError } from '../../landmarks/landmark-upstream-error';
 import { wikiLandmark } from '../../landmarks/__fixtures__/builders';
 import type { LandmarkLookup } from '../landmarks';
 
-const TOKEN = 'test-token-0123456789abcdef';
+const TOKEN = TEST_TOKEN;
 
 function makeLookup(overrides: Partial<LandmarkLookup> = {}) {
   const findNearby = vi.fn<LandmarkLookup['findNearby']>().mockResolvedValue([]);
@@ -17,19 +18,7 @@ function makeLookup(overrides: Partial<LandmarkLookup> = {}) {
     .fn<LandmarkLookup['findNearest']>()
     .mockResolvedValue({ landmark: null, searchedRadiusMeters: 10000 });
   const lookup: LandmarkLookup = { findNearby, findNearest, ...overrides };
-  const app = createApp(
-    {
-      port: 0,
-      host: '127.0.0.1',
-      appToken: TOKEN,
-      rateLimitPerMinute: 1000,
-      trustProxy: 0,
-      contact: 'test@example.com',
-      cachePath: null,
-      overpassUrl: 'https://overpass.example.org/api/interpreter',
-    },
-    { landmarks: lookup },
-  );
+  const app = createApp(testConfig(), testDeps({ landmarks: lookup }));
   return { app, findNearby, findNearest };
 }
 

@@ -1,4 +1,4 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 import { ENDPOINTS } from '@shared/api/endpoints';
 import type { NearbyLandmarksResponse, NearestLandmarkResponse } from '@shared/api/landmarks';
@@ -7,6 +7,7 @@ import type { Landmark } from '@shared/landmarks/landmark';
 import type { NearbyQuery } from '@shared/landmarks/provider';
 import { NEARBY_RADIUS_MAX_M, NEARBY_RADIUS_MIN_M } from '@shared/landmarks/search';
 import { sendApiError } from '../http/api-error';
+import { guarded } from '../http/guarded';
 
 export interface LandmarkLookup {
   findNearby(query: NearbyQuery, signal?: AbortSignal): Promise<Landmark[]>;
@@ -27,29 +28,6 @@ const nearestSchema = z.object({
 const nearbySchema = nearestSchema.extend({
   radius: num.pipe(z.number().min(NEARBY_RADIUS_MIN_M).max(NEARBY_RADIUS_MAX_M)),
 });
-
-/** Aborts when the client disconnects before the response finished. */
-function abortOnDisconnect(res: Response): AbortController {
-  const controller = new AbortController();
-  res.on('close', () => {
-    if (!res.writableFinished) controller.abort();
-  });
-  return controller;
-}
-
-type Handler = (req: Request, res: Response, signal: AbortSignal) => Promise<void>;
-
-function guarded(handler: Handler) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const controller = abortOnDisconnect(res);
-    try {
-      await handler(req, res, controller.signal);
-    } catch (err) {
-      if (controller.signal.aborted) return; // client is gone; nothing to report
-      next(err);
-    }
-  };
-}
 
 export function createLandmarksRouter(lookup: LandmarkLookup): Router {
   const router = Router();
