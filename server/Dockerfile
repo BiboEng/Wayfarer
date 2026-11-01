@@ -24,7 +24,10 @@ COPY --from=build --chown=node:node /app/server/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/server/dist ./dist
 
 # Default location for the cache and audio when a volume is mounted at /data.
+# Persistent by default, so the daily cost caps survive restarts; the host's variables can override these.
 RUN mkdir -p /data && chown node:node /data
+ENV CACHE_PATH=/data/cache.sqlite
+ENV AUDIO_DIR=/data/audio
 
 # The entrypoint starts as root only to chown the (root-owned) Railway volume, then
 # drops to the unprivileged "node" user with setpriv (util-linux, part of Debian base).

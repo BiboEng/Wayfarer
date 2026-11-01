@@ -141,9 +141,9 @@ describe('POST /narrations', () => {
       expect(res.body.error.code).toBe('NOT_FOUND');
     });
 
-    it('maps an unknown voice (BAD_REQUEST from the narrator) to 400', async () => {
-      const { app } = make({ narrate: () => Promise.reject(new NarrationError('BAD_REQUEST', 'Unknown voice.')) });
-      const res = await post(app, { ...BODY, voice: 'nope' });
+    it('maps a BAD_REQUEST from the narrator to 400', async () => {
+      const { app } = make({ narrate: () => Promise.reject(new NarrationError('BAD_REQUEST', 'Bad request.')) });
+      const res = await post(app, BODY);
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('BAD_REQUEST');
     });

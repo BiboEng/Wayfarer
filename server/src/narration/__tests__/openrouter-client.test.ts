@@ -5,7 +5,7 @@ import type { ChatMessage } from '../prompt';
 
 type FetchFn = typeof fetch;
 
-const KEY = 'sk-or-test-SECRET-KEY-12345';
+const KEY = 'test-openrouter-key-not-real';
 const MESSAGES: ChatMessage[] = [
   { role: 'system', content: 'rules' },
   { role: 'user', content: 'tell the story' },

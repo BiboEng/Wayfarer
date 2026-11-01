@@ -5,11 +5,14 @@
 - **Server:** `POST /narration` takes a landmark id + length + travel mode + voice. It reloads the landmark with `getById`, writes the story with OpenRouter (`OPENROUTER_MODEL`, default `google/gemini-2.5-flash-lite`, about $0.00015 a story) and makes audio through `TTSProvider` (`elevenlabs` or `none`). Text and audio are cached by landmark + length + mode + voice + prompt version. Daily caps (`DAILY_LLM_CALL_CAP`, `DAILY_TTS_CHAR_CAP`) fall back to the Wikipedia intro or to text only. Narration has its own per-IP rate limit. `GET /voices` lists voices. `server/scripts/sample-narration.ts` narrates one landmark and prints the cost.
 - **App:** `src/api/narration.ts`, `src/hooks/use-narration.ts`, and a Narrate panel on the landmark debug screen (text only; playback comes in Phase 4).
 - **Deploy files ready:** `server/Dockerfile`, `railway.json`.
-- **Review follow-ups (should-fix, not blockers):**
-  - In memory mode (no `CACHE_PATH`), the daily cap counters can be evicted or reset by a restart. Give them a non-evicting store, and set `CACHE_PATH`/`AUDIO_DIR` in the Dockerfile.
-  - An unknown voice id fails the whole narration; fall back to the default voice.
-  - The sample script prints no dollar estimate for ElevenLabs.
-  - Nits: drop a cut-off last sentence when `finishReason` is `length`; add the model to the cache key; the voice timeout can push past the app's 45 s; walking short/long fall slightly outside the brief's 60–90 s; rename the `sk-or-` fake test key (gitleaks).
+- **Review follow-ups, fixed (Lead, 2026-10-31):**
+  - The cap counters get their own store in memory mode (`server/src/costs/create-cap-store.ts`), so landmark lookups can't evict them.
+  - The Dockerfile defaults to `CACHE_PATH=/data/cache.sqlite` and `AUDIO_DIR=/data/audio`. Memory mode still resets on restart, and the server warns about it at startup.
+  - An unknown voice now falls back to the default voice (logged without the id).
+  - The sample script prints a voice cost estimate, plus a token-based AI estimate when OpenRouter reports no cost (`server/src/costs/estimate.ts`).
+  - The fake `sk-or-` test key was renamed.
+  - The Lead edited backend-owned files for these.
+- **Review nits still open:** drop a cut-off last sentence when `finishReason` is `length`; add the model to the cache key; the voice timeout can push past the app's 45 s; walking short/long fall slightly outside the brief's 60–90 s.
 
 **Phase 2 (landmark discovery) is done.** Reviewed, `npm run check` passes (115 app tests, 419 server tests), and the human tested the debug screen on their phone in the first dev build (2026-10-27).
 - **Contract:** `Landmark` and `LandmarkProvider` are final (adds `wikidataId`, `castle`, `archaeological_site`, `getById`). `shared/landmarks/search.ts` holds the radius limits and Explore steps; `shared/geo/distance.ts` is the shared haversine. Routes `GET /landmarks/nearby` and `GET /landmarks/nearest` (`null` = nothing found, a 200).

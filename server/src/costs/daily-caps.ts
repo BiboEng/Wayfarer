@@ -30,7 +30,7 @@ export function utcDay(epochMs: number): string {
 }
 
 /**
- * Daily spend counters stored in the CacheStore (so they survive restarts).
+ * Daily spend counters stored in a CacheStore (they survive restarts when it is SQLite; see create-cap-store).
  * Operations run one at a time in this process, so two requests arriving
  * together cannot both slip under the limit.
  */

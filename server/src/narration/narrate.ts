@@ -72,8 +72,10 @@ export function createNarrator(deps: NarratorDeps): Narrator {
   function resolveVoice(requested: VoiceId | undefined): VoiceId {
     if (!hasVoices) return DEVICE_VOICE;
     if (requested === undefined) return deps.tts.voices[0].id;
-    if (!deps.tts.voices.some((v) => v.id === requested)) throw new NarrationError('BAD_REQUEST', 'Unknown voice.');
-    return requested;
+    if (deps.tts.voices.some((v) => v.id === requested)) return requested;
+    // A voice saved in the app's Settings can outlive a change to ELEVENLABS_VOICES: a tour should still get a story.
+    log('[narration] Unknown voice requested; using the default voice.'); // the id is client input, so it is not logged
+    return deps.tts.voices[0].id;
   }
 
   /** Makes the audio file within the daily cap. Returns false for text-only. */

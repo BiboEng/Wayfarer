@@ -3,6 +3,7 @@ import { createBlobStore } from './cache/create-blob-store';
 import { createCacheStore } from './cache/create-cache-store';
 import { EnvError, parseEnv, type ServerConfig } from './config/env';
 import { loadEnvFile } from './config/load-env-file';
+import { createCapStore } from './costs/create-cap-store';
 import { createDailyCaps } from './costs/daily-caps';
 import { createLandmarkService } from './landmarks';
 import { createNarrator } from './narration/narrate';
@@ -33,8 +34,15 @@ function main(): void {
     landmarks,
     tts,
     llm: createOpenRouterClient({ apiKey: config.openRouterApiKey, model: config.openRouterModel }),
-    caps: createDailyCaps({ cache, llmCalls: config.dailyLlmCallCap, ttsChars: config.dailyTtsCharCap }),
+    caps: createDailyCaps({
+      cache: createCapStore(config.cachePath, cache),
+      llmCalls: config.dailyLlmCallCap,
+      ttsChars: config.dailyTtsCharCap,
+    }),
   });
+  if (config.cachePath === null) {
+    console.warn('No CACHE_PATH: the cache and the daily cost caps are in memory and reset on every restart.');
+  }
 
   const app = createApp(config, { landmarks, narrator, blobs, tts });
   const server = app.listen(config.port, config.host, () => {

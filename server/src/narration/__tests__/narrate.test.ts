@@ -225,13 +225,15 @@ describe('createNarrator: errors before any paid call', () => {
     expect(getById).toHaveBeenCalledTimes(2);
   });
 
-  it('throws BAD_REQUEST for an unknown voice when the server has voices, with no upstream calls', async () => {
-    const { narrator, getById, complete, synthesize } = setup({ voices: VOICES });
-    const error = await narrator.narrate({ ...REQUEST, voice: 'nope' }).catch((e: unknown) => e);
-    expect(error).toMatchObject({ name: 'NarrationError', code: 'BAD_REQUEST', status: 400 });
-    expect(getById).not.toHaveBeenCalled();
-    expect(complete).not.toHaveBeenCalled();
-    expect(synthesize).not.toHaveBeenCalled();
+  it('falls back to the default voice for an unknown voice, and logs it without the id', async () => {
+    const { narrator, synthesize, logs } = setup({ voices: VOICES });
+    const result = await narrator.narrate({ ...REQUEST, voice: 'nope-not-a-voice' });
+    expect(result.text).toBe(AI_TEXT);
+    expect(result.audio).not.toBeNull();
+    expect(synthesize).toHaveBeenCalledTimes(1);
+    expect(synthesize.mock.calls[0][1]).toBe(VOICES[0].id);
+    expect(logs.some((m) => m.includes('Unknown voice'))).toBe(true);
+    expect(logs.join('\n')).not.toContain('nope-not-a-voice');
   });
 
   it('lets upstream landmark failures through unchanged', async () => {

@@ -16,7 +16,9 @@ import { createBlobStore } from '../src/cache/create-blob-store';
 import { createCacheStore } from '../src/cache/create-cache-store';
 import { EnvError, parseEnv } from '../src/config/env';
 import { loadEnvFile } from '../src/config/load-env-file';
+import { createCapStore } from '../src/costs/create-cap-store';
 import { createDailyCaps } from '../src/costs/daily-caps';
+import { estimateLlmUsd, estimateTtsUsd } from '../src/costs/estimate';
 import { createLandmarkService } from '../src/landmarks';
 import { createNarrator } from '../src/narration/narrate';
 import { NarrationError } from '../src/narration/narration-error';
@@ -79,7 +81,11 @@ async function main(): Promise<void> {
     landmarks,
     llm,
     tts: countingTts,
-    caps: createDailyCaps({ cache, llmCalls: config.dailyLlmCallCap, ttsChars: config.dailyTtsCharCap }),
+    caps: createDailyCaps({
+      cache: createCapStore(config.cachePath, cache),
+      llmCalls: config.dailyLlmCallCap,
+      ttsChars: config.dailyTtsCharCap,
+    }),
   });
 
   console.log(`Narrating ${landmarkId} (${travelMode}, ${length}) with TTS provider "${tts.name}"...`);
@@ -93,14 +99,21 @@ async function main(): Promise<void> {
     console.log(`Words:        ${wordCount(result.text)} (target ${target})`);
     console.log(`Source:       ${result.source}`);
     if (lastLlm) {
-      const cost = lastLlm.costUsd === undefined ? 'not reported' : `$${lastLlm.costUsd}`;
       console.log(`Model:        ${lastLlm.model}`);
       console.log(`Tokens:       ${lastLlm.promptTokens ?? '?'} in, ${lastLlm.completionTokens ?? '?'} out`);
-      console.log(`AI cost:      ${cost} (as reported by OpenRouter)`);
+      if (lastLlm.costUsd !== undefined) {
+        console.log(`AI cost:      $${lastLlm.costUsd} (as reported by OpenRouter)`);
+      } else {
+        const estimate = estimateLlmUsd(lastLlm.model, lastLlm.promptTokens ?? 0, lastLlm.completionTokens ?? 0);
+        console.log(`AI cost:      ${estimate === undefined ? 'not reported, no list price for this model' : `about $${estimate.toFixed(7)} (estimated from tokens)`}`);
+      }
     } else {
       console.log('AI cost:      $0 (no AI call: cache hit, or the daily AI cap was reached)');
     }
     console.log(`TTS chars:    ${ttsCharacters}${ttsCharacters === 0 ? ' (no voice call)' : ''}`);
+    if (ttsCharacters > 0) {
+      console.log(`Voice cost:   about $${estimateTtsUsd(ttsCharacters).toFixed(4)} at the pay-as-you-go rate ($0 extra within a plan's monthly quota)`);
+    }
     console.log(`Time:         ${seconds} s`);
 
     if (result.audio) {

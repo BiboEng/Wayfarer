@@ -9,7 +9,7 @@ export interface NarrationRequest {
   landmarkId: string;
   length: NarrationLength;
   travelMode: TravelMode;
-  /** Omit for the server's default voice. */
+  /** Omit for the server's default voice. A voice the server no longer offers also gets the default. */
   voice?: VoiceId;
 }
 
