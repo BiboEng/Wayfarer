@@ -1,4 +1,4 @@
-import type { NarrationRequest, NarrationResponse } from '@shared/api/narration';
+import type { NarrationResponse } from '@shared/api/narration';
 import type { LatLng } from '@shared/geo/lat-lng';
 import type { Landmark } from '@shared/landmarks/landmark';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
@@ -7,13 +7,14 @@ import { getNearestLandmark } from '@/api/landmarks';
 import { requestNarration } from '@/api/narration';
 import { narrationAudioSource } from '@/api/narration-audio';
 import { narrationPlayer, useNarrationPlayer, type PlayableNarration } from '@/audio';
+import { settingsStore } from '@/settings';
 
 import { exploreNarrationId, exploreReducer, INITIAL_EXPLORE_STATE, tappedPoint } from './explore-flow';
 import type { ExploreView } from './explore-view';
 import { toExploreView } from './to-explore-view';
 
-/** Explore narrates as if on foot. The Settings screen (Phase 5) will choose length and voice. */
-const EXPLORE_NARRATION: Omit<NarrationRequest, 'landmarkId'> = { length: 'medium', travelMode: 'walking' };
+/** Explore always narrates as if on foot; length and voice come from Settings. */
+const EXPLORE_TRAVEL_MODE = 'walking';
 
 export interface UseExplore {
   view: ExploreView;
@@ -65,7 +66,13 @@ export function useExplore(): UseExplore {
       dispatch({ type: 'SEARCH_DONE', requestId, landmark, searchedRadiusMeters });
       if (!landmark) return;
 
-      void requestNarration({ landmarkId: landmark.id, ...EXPLORE_NARRATION }).then((result) => {
+      const { length, voice } = settingsStore.get();
+      void requestNarration({
+        landmarkId: landmark.id,
+        length,
+        travelMode: EXPLORE_TRAVEL_MODE,
+        ...(voice ? { voice } : {}),
+      }).then((result) => {
         if (requestId !== latest.current) return;
         if (!result.ok) {
           dispatch({ type: 'NARRATION_FAILED', requestId, error: result.error });

@@ -7,7 +7,9 @@ import { errorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { healthRouter } from './routes/health';
+import type { CueService } from './narration/cues';
 import type { Narrator } from './narration/narrate';
+import { createCuesRouter } from './routes/cues';
 import { createLandmarksRouter, type LandmarkLookup } from './routes/landmarks';
 import { createNarrationRouter } from './routes/narration';
 import { createVoicesRouter } from './routes/voices';
@@ -15,6 +17,7 @@ import { createVoicesRouter } from './routes/voices';
 export interface AppDeps {
   landmarks: LandmarkLookup;
   narrator: Narrator;
+  cues: CueService;
   blobs: BlobStore;
   tts: Pick<TTSProvider, 'voices'>;
 }
@@ -39,6 +42,8 @@ export function createApp(config: ServerConfig, deps: AppDeps): express.Express 
   app.use(createLandmarksRouter(deps.landmarks));
 
   app.use(createVoicesRouter(deps.tts));
+  // Registered before the narration router; the paths do not overlap (/narrations/cues/:cue vs /narrations/audio/:key vs POST /narrations).
+  app.use(createCuesRouter(deps.cues));
   app.use(
     createNarrationRouter({
       narrator: deps.narrator,

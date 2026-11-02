@@ -4,12 +4,18 @@
  * Every playback gets a token. `PLAY_REQUESTED`, `STOP` and the fallback to the device voice
  * issue a new one; events from an output carry the token it was started with, and events with
  * an old token are ignored, so a late callback from a stopped sound can never change state.
+ *
+ * A narration may have an intro: while it plays, `pendingMain` holds the output of the main part.
+ * When the intro finishes or fails, the main part starts with a new token; the status carries on
+ * (one narration, one status), and `ended` only comes after the main part.
  */
 import type { PlayerOutput, PlayerState } from './types';
 
 export interface MachineState extends PlayerState {
   /** Token of the current playback; output events must carry it to count. */
   token: number;
+  /** Set while the intro plays: the output the main part uses next. Absent otherwise. */
+  pendingMain?: PlayerOutput;
 }
 
 export const INITIAL_MACHINE_STATE: MachineState = {
@@ -20,7 +26,8 @@ export const INITIAL_MACHINE_STATE: MachineState = {
 };
 
 export type MachineEvent =
-  | { type: 'PLAY_REQUESTED'; narrationId: string; output: PlayerOutput }
+  /** `output` is the main part's; `introOutput` (optional) plays first. */
+  | { type: 'PLAY_REQUESTED'; narrationId: string; output: PlayerOutput; introOutput?: PlayerOutput | null }
   | { type: 'OUTPUT_STARTED'; token: number }
   /** Paused by the user, or by the system (audio focus lost, app in background). */
   | { type: 'PAUSED'; token: number }
@@ -33,8 +40,12 @@ export type MachineEvent =
 /** Returns the same object when the event changes nothing, so callers can skip notifying. */
 export function playerReducer(state: MachineState, event: MachineEvent): MachineState {
   switch (event.type) {
-    case 'PLAY_REQUESTED':
-      return { status: 'loading', narrationId: event.narrationId, output: event.output, token: state.token + 1 };
+    case 'PLAY_REQUESTED': {
+      const base = { status: 'loading' as const, narrationId: event.narrationId, token: state.token + 1 };
+      return event.introOutput
+        ? { ...base, output: event.introOutput, pendingMain: event.output }
+        : { ...base, output: event.output };
+    }
 
     case 'STOP':
       if (state.status === 'idle') return state;
@@ -50,6 +61,10 @@ type OutputEvent = Exclude<MachineEvent, { type: 'PLAY_REQUESTED' } | { type: 'S
 
 function onOutputEvent(state: MachineState, event: OutputEvent): MachineState {
   const { status } = state;
+  // The intro finished or failed: go on to the main part (a failed intro is skipped silently).
+  if (state.pendingMain && isActive(state) && (event.type === 'FINISHED' || event.type === 'OUTPUT_ERROR')) {
+    return toMainPart(state);
+  }
   switch (event.type) {
     case 'OUTPUT_STARTED':
       return status === 'loading' ? { ...state, status: 'playing' } : state;
@@ -72,6 +87,10 @@ function onOutputEvent(state: MachineState, event: OutputEvent): MachineState {
       }
       return { ...state, status: 'failed' };
   }
+}
+
+function toMainPart({ pendingMain, ...state }: MachineState): MachineState {
+  return { ...state, output: pendingMain ?? state.output, token: state.token + 1 };
 }
 
 /** True while an output is (or should be) making sound for the current narration. */

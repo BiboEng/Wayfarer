@@ -1,36 +1,45 @@
+import { useKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText } from '@/components/app-text';
 import { BigButton } from '@/components/big-button';
-import { PlaceholderCard } from '@/components/placeholder-card';
 import { Screen } from '@/components/screen';
+import { SourcePicker } from '@/components/tour/source-picker';
+import { TourBody } from '@/components/tour/tour-body';
+import { useTourLifecycle } from '@/hooks/use-tour-lifecycle';
 import { spacing } from '@/theme';
+import { tourSession, useTourSession } from '@/tour';
 
 export default function TourScreen() {
+  // The tour only works on screen, so the screen must not go to sleep while it runs.
+  useKeepAwake();
   const router = useRouter();
+  const snapshot = useTourSession();
+  const { changeSource } = useTourLifecycle();
+
+  const stopTour = () => {
+    tourSession.stop();
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  };
+
   return (
     <Screen>
       <View style={styles.body}>
-        <PlaceholderCard title="Live Tour" badge="Arrives in Phase 5">
-          <AppText color="textSecondary">
-            This screen will show what is playing now, a small map with your position, and the list
-            of places narrated so far.
-          </AppText>
-        </PlaceholderCard>
+        <TourBody snapshot={snapshot} />
       </View>
+      {__DEV__ ? <SourcePicker source={snapshot.source} onChange={changeSource} /> : null}
       <BigButton
         label="Stop Tour"
-        size="huge"
         variant="primary"
         accessibilityLabel="Stop tour"
         accessibilityHint="Ends the tour and returns to the home screen"
-        onPress={() => router.back()}
+        onPress={stopTour}
       />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, gap: spacing.lg },
+  body: { flex: 1, minHeight: 0, gap: spacing.lg },
 });

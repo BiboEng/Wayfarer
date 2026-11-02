@@ -6,6 +6,7 @@ import { loadEnvFile } from './config/load-env-file';
 import { createCapStore } from './costs/create-cap-store';
 import { createDailyCaps } from './costs/daily-caps';
 import { createLandmarkService } from './landmarks';
+import { createCueService } from './narration/cues';
 import { createNarrator } from './narration/narrate';
 import { createOpenRouterClient } from './narration/openrouter-client';
 import { createTtsProvider } from './tts/create-tts-provider';
@@ -28,23 +29,25 @@ function main(): void {
   const blobs = createBlobStore(config.audioDir);
   const tts = createTtsProvider(config);
   const landmarks = createLandmarkService({ contact: config.contact, overpassUrl: config.overpassUrl, cache });
+  const caps = createDailyCaps({
+    cache: createCapStore(config.cachePath, cache),
+    llmCalls: config.dailyLlmCallCap,
+    ttsChars: config.dailyTtsCharCap,
+  });
   const narrator = createNarrator({
     cache,
     blobs,
     landmarks,
     tts,
     llm: createOpenRouterClient({ apiKey: config.openRouterApiKey, model: config.openRouterModel }),
-    caps: createDailyCaps({
-      cache: createCapStore(config.cachePath, cache),
-      llmCalls: config.dailyLlmCallCap,
-      ttsChars: config.dailyTtsCharCap,
-    }),
+    caps,
   });
+  const cues = createCueService({ blobs, tts, caps }); // shares the narrator's caps: both spend the same TTS budget
   if (config.cachePath === null) {
     console.warn('No CACHE_PATH: the cache and the daily cost caps are in memory and reset on every restart.');
   }
 
-  const app = createApp(config, { landmarks, narrator, blobs, tts });
+  const app = createApp(config, { landmarks, narrator, cues, blobs, tts });
   const server = app.listen(config.port, config.host, () => {
     console.log(`Wayfarer server listening on ${config.host}:${config.port} (tts: ${tts.name})`);
   });

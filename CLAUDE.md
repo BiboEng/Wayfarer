@@ -31,7 +31,7 @@ Spec: `docs/BRIEF.md` — never edit it without the human's approval. Status log
 | Owner | Paths |
 |---|---|
 | Lead | `shared/`, `src/api/`, `src/config/`, `src/explore/`, `docs/`, `.github/`, `.claude/`, `CLAUDE.md`, `AGENTS.md`, root config (`package.json` scripts, `app.json` / `app.config.ts`, `eas.json`, `tsconfig.json`, lint config, `.gitignore`) |
-| mobile-ui | `src/app/`, `src/components/`, `src/theme/`, `src/hooks/`, `assets/` |
+| mobile-ui | `src/app/`, `src/components/`, `src/theme/`, `src/hooks/`, `src/settings/`, `assets/` |
 | tour-engine | `src/tour/`, `src/location/`, `src/audio/`, `src/dev/` |
 | landmark-data | `server/src/landmarks/` |
 | backend | everything else in `server/` |

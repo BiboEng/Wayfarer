@@ -5,20 +5,22 @@ import { colors, radius, spacing } from '@/theme';
 import { AppText } from './app-text';
 
 export type BigButtonVariant = 'primary' | 'accent' | 'outline';
-export type BigButtonSize = 'huge' | 'large';
+export type BigButtonSize = 'huge' | 'tall' | 'large';
 
 export interface BigButtonProps {
   label: string;
   onPress: () => void;
   variant?: BigButtonVariant;
-  /** `huge` (160dp) is meant for hitting without looking, e.g. while driving. */
+  /** `huge` (160dp) and `tall` (96dp) are meant for hitting without looking, e.g. while driving. */
   size?: BigButtonSize;
+  /** Dimmed and inert; keeps its place so buttons do not move around. */
+  disabled?: boolean;
   accessibilityLabel?: string;
   accessibilityHint?: string;
   style?: StyleProp<ViewStyle>;
 }
 
-const HEIGHT: Record<BigButtonSize, number> = { huge: 160, large: 72 };
+const HEIGHT: Record<BigButtonSize, number> = { huge: 160, tall: 96, large: 72 };
 
 /** Full-width, high-contrast button with a big touch target. */
 export function BigButton({
@@ -26,6 +28,7 @@ export function BigButton({
   onPress,
   variant = 'primary',
   size = 'large',
+  disabled = false,
   accessibilityLabel,
   accessibilityHint,
   style,
@@ -35,17 +38,20 @@ export function BigButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       android_ripple={{ color: colors.overlay }}
       style={({ pressed }) => [
         styles.base,
         { minHeight: HEIGHT[size] },
         variantStyle(variant, pressed),
+        disabled && styles.disabled,
         style,
       ]}
     >
       <AppText
-        variant={size === 'huge' ? 'bigButton' : 'button'}
+        variant={size === 'large' ? 'button' : 'bigButton'}
         color={variant === 'accent' ? 'textOnAccent' : 'text'}
         style={styles.label}
       >
@@ -80,4 +86,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   label: { textAlign: 'center' },
+  disabled: { opacity: 0.4 },
 });

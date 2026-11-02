@@ -19,4 +19,6 @@ export const ENDPOINTS = {
   narrationAudio: '/narrations/audio',
   /** GET, see `VoicesResponse`. */
   voices: '/voices',
+  /** GET `${cues}/:cue?voice=`, see `CueResponse`. A fixed orientation line, made once per voice. */
+  cues: '/narrations/cues',
 } as const;

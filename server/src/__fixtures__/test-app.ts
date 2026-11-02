@@ -1,8 +1,11 @@
+import type { CueResponse } from '@shared/api/cues';
 import type { NearestLandmarkResponse } from '@shared/api/landmarks';
 import type { NarrationResponse } from '@shared/api/narration';
+import { ORIENTATION_CUE_TEXT } from '@shared/narration/cues';
 import type { AppDeps } from '../app';
 import { createMemoryBlobStore } from '../cache/memory-blob-store';
 import type { ServerConfig } from '../config/env';
+import type { CueService } from '../narration/cues';
 import type { Narrator } from '../narration/narrate';
 import type { LandmarkLookup } from '../routes/landmarks';
 
@@ -41,11 +44,16 @@ export const idleNarrator: Narrator = {
     Promise.resolve<NarrationResponse>({ landmarkId: request.landmarkId, text: 'A story.', audio: null, source: 'ai' }),
 };
 
+export const idleCues: CueService = {
+  getCue: (cue) => Promise.resolve<CueResponse>({ cue, text: ORIENTATION_CUE_TEXT[cue], audio: null }),
+};
+
 /** App dependencies that do nothing; tests override the part they care about. */
 export function testDeps(overrides: Partial<AppDeps> = {}): AppDeps {
   return {
     landmarks: idleLandmarks,
     narrator: idleNarrator,
+    cues: idleCues,
     blobs: createMemoryBlobStore(),
     tts: { voices: [] },
     ...overrides,

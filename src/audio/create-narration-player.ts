@@ -2,6 +2,7 @@
  * Wires the state machine to the sound outputs. No React or Expo imports: the outputs are
  * passed in, so this can be tested with fakes.
  */
+import { introOutputFor } from './intro-output';
 import type { PlaybackCallbacks, PlaybackOutput, StartAudioFile, StartDeviceVoice } from './playback-output';
 import { INITIAL_MACHINE_STATE, playerReducer, type MachineEvent, type MachineState } from './player-machine';
 import type { NarrationPlayer, PlayableNarration, PlayerState } from './types';
@@ -41,13 +42,21 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
   function startOutput(token: number): void {
     if (token !== machine.token || !narration) return;
     const callbacks = callbacksFor(token);
+    // While `pendingMain` is set, the intro is playing; otherwise the main part.
+    const part = machine.pendingMain && narration.intro ? narration.intro : narration;
     const output =
-      machine.output === 'audio' && narration.audio
-        ? deps.startAudioFile(narration.audio, callbacks)
-        : deps.startDeviceVoice(narration.text, callbacks);
+      machine.output === 'audio' && part.audio
+        ? deps.startAudioFile(part.audio, callbacks)
+        : deps.startDeviceVoice(part.text, callbacks);
     // Defensive: if the playback changed while starting, this output must stay silent.
     if (token === machine.token) current = output;
     else output.stop();
+  }
+
+  /** Starts the part the machine moved on to. If paused, it starts on resume() instead. */
+  function startNextPart(previousToken: number, next: MachineState): void {
+    if (next.token === previousToken) return;
+    if (next.status === 'loading' || next.status === 'playing') startOutput(next.token);
   }
 
   function callbacksFor(token: number): PlaybackCallbacks {
@@ -56,15 +65,14 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
       onFinished: () => {
         if (token !== machine.token) return;
         current = null;
-        dispatch({ type: 'FINISHED', token });
+        // After the intro, the machine moves on to the main part with a new token.
+        startNextPart(token, dispatch({ type: 'FINISHED', token }));
       },
       onError: () => {
         if (token !== machine.token) return;
         stopOutput();
-        const next = dispatch({ type: 'OUTPUT_ERROR', token });
-        // Audio failed: the machine moved to the device voice with a new token.
-        // If paused, the device voice starts on resume().
-        if (next.status === 'loading') startOutput(next.token);
+        // A failed intro is skipped; failed main audio falls back to the device voice.
+        startNextPart(token, dispatch({ type: 'OUTPUT_ERROR', token }));
       },
       onInterrupted: (paused) => dispatch({ type: paused ? 'PAUSED' : 'RESUMED', token }),
     };
@@ -74,7 +82,12 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
     play(next) {
       stopOutput();
       narration = next;
-      const { token } = dispatch({ type: 'PLAY_REQUESTED', narrationId: next.id, output: next.audio ? 'audio' : 'device-voice' });
+      const { token } = dispatch({
+        type: 'PLAY_REQUESTED',
+        narrationId: next.id,
+        output: next.audio ? 'audio' : 'device-voice',
+        introOutput: introOutputFor(next),
+      });
       void deps
         .prepareAudio()
         .catch(() => undefined)
@@ -89,7 +102,7 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
       if (machine.status !== 'paused') return;
       const { token } = machine;
       if (current) current.resume();
-      else startOutput(token); // the audio failed while paused: start the device voice now
+      else startOutput(token); // the previous part ended or failed while paused: start the next one now
       dispatch({ type: 'RESUMED', token });
     },
     stop() {

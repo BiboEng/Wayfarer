@@ -7,7 +7,7 @@ import type { TTSProvider } from '@shared/narration/tts-provider';
 import { AUDIO_CONTENT_TYPE, type BlobStore } from '../cache/blob-store';
 import type { CacheStore } from '../cache/cache-store';
 import type { DailyCaps } from '../costs/daily-caps';
-import { UpstreamError } from '../http/upstream-error';
+import { createAudioMaker } from './audio-maker';
 import { audioBlobKey, narrationCacheKey } from './cache-key';
 import { cleanNarration } from './clean-text';
 import { NarrationError } from './narration-error';
@@ -18,8 +18,6 @@ import { wikipediaFallbackText } from './wikipedia-fallback';
 export const TEXT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 /** Fallback text is kept briefly so the AI is tried again soon. */
 export const FALLBACK_TTL_MS = 30 * 60 * 1000;
-/** Voice name used when the server has no TTS voices. */
-export const DEVICE_VOICE = 'device';
 
 export interface NarratorDeps {
   cache: CacheStore;
@@ -49,17 +47,11 @@ interface CachedText {
 /** Room for the model's words, with headroom (about 1.4 tokens per word, plus slack). */
 const maxTokensFor = (words: number): number => Math.ceil(words * 2.5) + 50;
 
-/** A 4xx from the voice service came back before any audio was made, so nothing was billed. */
-function failedBeforeSpending(err: unknown): boolean {
-  return err instanceof UpstreamError && err.status !== undefined && err.status >= 400 && err.status < 500;
-}
-
 export function createNarrator(deps: NarratorDeps): Narrator {
   const log = deps.log ?? ((message: string) => console.log(message));
-  const hasVoices = deps.tts.voices.length > 0;
-  // Single flight: concurrent requests for the same missing item share one paid call.
+  const audio = createAudioMaker({ blobs: deps.blobs, tts: deps.tts, caps: deps.caps, log });
+  // Single flight: concurrent requests for the same missing story share one paid call.
   const textFlights = new Map<string, Promise<CachedText>>();
-  const audioFlights = new Map<string, Promise<boolean>>();
 
   function singleFlight<T>(flights: Map<string, Promise<T>>, key: string, start: () => Promise<T>): Promise<T> {
     const running = flights.get(key);
@@ -69,49 +61,11 @@ export function createNarrator(deps: NarratorDeps): Narrator {
     return promise;
   }
 
-  function resolveVoice(requested: VoiceId | undefined): VoiceId {
-    if (!hasVoices) return DEVICE_VOICE;
-    if (requested === undefined) return deps.tts.voices[0].id;
-    if (deps.tts.voices.some((v) => v.id === requested)) return requested;
-    // A voice saved in the app's Settings can outlive a change to ELEVENLABS_VOICES: a tour should still get a story.
-    log('[narration] Unknown voice requested; using the default voice.'); // the id is client input, so it is not logged
-    return deps.tts.voices[0].id;
-  }
-
-  /** Makes the audio file within the daily cap. Returns false for text-only. */
-  async function makeAudio(blobKey: string, text: string, voice: VoiceId): Promise<boolean> {
-    const day = await deps.caps.tryReserve('tts', text.length);
-    if (day === null) return false;
-    let audio;
-    try {
-      audio = await deps.tts.synthesize(text, voice);
-    } catch (err) {
-      // Keep the reservation unless the call certainly never produced audio: a timeout or 5xx may still be billed.
-      if (failedBeforeSpending(err)) await deps.caps.release('tts', text.length, day);
-      log(`[narration] TTS failed (${err instanceof Error ? err.name : 'error'}); returning text only.`);
-      return false;
-    }
-    if (!audio) {
-      await deps.caps.release('tts', text.length, day);
-      return false;
-    }
-    try {
-      await deps.blobs.put(blobKey, audio.data); // audio was paid for: the reservation stays
-    } catch {
-      log('[narration] Could not store audio; returning text only.');
-      return false;
-    }
-    return true;
-  }
-
   async function getAudioKey(text: string, voice: VoiceId): Promise<string | null> {
-    if (!hasVoices) return null;
+    if (!audio.hasVoices) return null;
     const blobKey = audioBlobKey(text, voice);
     if (await deps.blobs.has(blobKey)) return blobKey;
-    const ok = await singleFlight(audioFlights, blobKey, async () =>
-      (await deps.blobs.has(blobKey)) ? true : makeAudio(blobKey, text, voice),
-    );
-    return ok ? blobKey : null;
+    return (await audio.ensure(blobKey, text, voice)) ? blobKey : null;
   }
 
   /** Writes the story with the AI within the daily cap, or falls back to the Wikipedia intro. */
@@ -154,7 +108,7 @@ export function createNarrator(deps: NarratorDeps): Narrator {
 
   return {
     async narrate(request) {
-      const voice = resolveVoice(request.voice);
+      const voice = audio.resolveVoice(request.voice);
       const cacheKey = narrationCacheKey({
         landmarkId: request.landmarkId,
         travelMode: request.travelMode,

@@ -1,6 +1,19 @@
 # Wayfarer — Progress
 
 ## Current status
+**Phase 5 (Live Tour, foreground) is done: reviewed and approved by the human (2026-11-02).** `npm run check` passes (884 app tests, 837 server tests); `expo export --platform android` bundles. Added `expo-keep-awake` (already in the dev build through `expo`, so no rebuild).
+- **Tour engine** (`src/tour/`, tour-engine): pure modules plus `create-tour-session.ts` (dependencies injected) and the `tourSession` singleton.
+  - Speed modes with hysteresis: driving after ~15 s above 12 km/h, walking after ~30 s below 7 km/h; Settings can fix the mode. Walking searches 200 m and re-checks every 60 m; driving searches 800 m centred ~400 m ahead (works around Wikipedia's 20-nearest cap), re-checks every 250 m, and only takes places ahead.
+  - Ranking needs a Wikipedia article; scores distance and ahead; `place-quality.ts` pushes down probable non-places and events (the Phase 2 open issue).
+  - Queue rules in `tour-machine.ts`: one story at a time, the next only after the current one ends, at most one pre-fetch, in-flight requests reused, stale driving stories dropped, silence when nothing qualifies. Failures are silent and retried at the next check (distance, or 60 s after a failure while standing still). Fixes rougher than 100 m (walking) / 150 m (driving) are ignored.
+  - No repeats: in the tour and per local day (`visited.ts`, AsyncStorage).
+  - Orientation line in the same voice: server cues `GET /narrations/cues/:cue` ("Coming up ahead / on your left / on your right"), made once per voice, cached in the audio store (re-made after its 30-day purge for ~25 characters). The player plays an optional `intro` before the story as one narration; with the phone voice the phone speaks it; a missing cue never delays a story.
+  - Permissions: foreground only (Phase 6 adds background). On-screen states for needs-permission, denied, location off and approximate-only (Android 12+); no popups mid-tour; Android's "improve accuracy" dialog is suppressed.
+- **Location and simulator** (`src/location/`, `src/dev/`): `watchPositionAsync` at high accuracy (walking 10 m / 3 s, driving 30 m / 5 s, restarted on mode change). Dev-only route simulator feeds the same pipeline: walk Sultanahmet (~1.9 km at 5 km/h) and drive Karaköy → Ortaköy along the Bosphorus (~5.1 km at 40 km/h).
+- **Screens** (mobile-ui): Live Tour (`src/app/tour.tsx`, `src/components/tour/`): now-playing card with photo and side line, big Pause/Resume and Skip, mini map with our own position marker and pins, narrated list with replay, Stop Tour, dev source picker, screen kept awake; leaving the screen stops the tour. Settings: voice (from `GET /voices`, "Phone voice" when empty), length, travel mode; saved in AsyncStorage (`src/settings/`), used by Live Tour and Explore (Explore keeps walking).
+- **Server** (backend): `server/src/narration/audio-maker.ts` (TTS + audio store + cap, extracted from `narrate.ts`, shared by narrations and cues), `narration/cues.ts`, `routes/cues.ts`. Cue audio key is `sha256("cue|provider|voice|text")`.
+- **Review:** no blockers; five should-fixes (permission race, approximate location, retry while stationary, accuracy gate, driving search cap) and nine nits fixed.
+
 **Phase 4 (Explore the World) is done: reviewed, phone-tested and approved by the human (2026-11-01).** Dev build `737ab19b` carries the Maps key. `npm run check` passes (427 app tests, 813 server tests); `expo export --platform android` bundles. No new packages, no server changes.
 - **Explore screen** (`src/app/explore.tsx`, `src/components/explore/`): full-screen Google map in a warm dark style (`src/theme/map-style.ts`, reused by Live Tour later). Tap → nearest landmark → pin + bottom card (thumbnail, name, kind, distance, Wikipedia link) → the story plays. States: searching, writing the story, getting ready, playing/paused, ended (Replay), nothing within 10 km, error + Retry. Collapsible "Read the story" transcript.
 - **Explore flow** (`src/explore/`, Lead): pure reducer + view mapping; stale responses are dropped by request id; a new tap stops the current story; leaving the screen stops Explore's story only. Explore narrates as `medium` / `walking` / server default voice until Settings exists (Phase 5). Retry after a playback failure replays the story it already has (no new server calls).
@@ -55,6 +68,8 @@
 - **`src/explore/` is Lead-owned** (Explore flow logic and hook), since the brief gives the Explore wiring to the Lead. Added to the CLAUDE.md ownership table. (Phase 4)
 - **Country names on maps come from our own data, not Google** (human's choice, so the app controls every name). Overrides live at the top of `scripts/country-labels/generate.mjs`. (Phase 4)
 - **One app-wide narration player** shared by Explore and Live Tour; Explore uses `duckOthers` audio focus. (Phase 4 plan, approved.)
+- **Live Tour rules (Phase 5 plan, approved):** a new story only after the current one ends; Skip, Replay (plays now) and Stop are the only interruptions; screen kept awake and the tour stops on leaving the screen until Phase 6; orientation line in the same voice from server cues (human's choice).
+- **`src/settings/` is mobile-ui-owned** (CLAUDE.md row added). Settings uses themed buttons instead of `@expo/ui` pickers (their popups ignore the theme); `@expo/ui` is unused for now but kept for later switches. (Phase 5)
 - **Package id `com.biboeng.wayfarer`.** It's tied to the Maps key restriction.
 - **Native modules installed up front:** maps, location, task-manager, audio, speech, async-storage, dev-client. One dev build covers Phases 1–5; Phase 6 permissions mean one rebuild. (Human approved; deviates from the per-phase installs in Part D.)
 - **Config in `app.config.ts` only (no `app.json`)**, so the Maps key comes from env. `npx expo install` can't auto-add plugins to it, so plugin entries are added by hand.
@@ -66,8 +81,8 @@
 
 ## Open issues
 - **Overpass (OpenStreetMap) was down or at capacity throughout Phase 2 testing** (2026-10-26; main server and two mirrors). The fallback to Wikipedia-only results works, but merging has only been tested on a hand-made fixture. Re-run `server/src/landmarks/__fixtures__/record.ts` when it recovers. If it stays unreliable, get landmark types from Wikidata instead (every Wikipedia result has a Wikidata id).
-- **Wikipedia returns geotagged events** (e.g. "740 Constantinople earthquake") as landmarks. Phase 5 ranking must push down results with no OSM match / non-place articles.
-- **Wikipedia is capped at the 20 nearest pages** (`exlimit`). Fine for walking and Explore; for 1–2 km driving radii, revisit in Phase 5 (wider geosearch, extracts only for the top-ranked).
+- **Wikipedia returns geotagged events** (e.g. "740 Constantinople earthquake") as landmarks. Handled in Phase 5 ranking (`src/tour/place-quality.ts`); Explore's `/landmarks/nearest` still can return one.
+- **Wikipedia is capped at the 20 nearest pages** (`exlimit`). Phase 5 works around it for driving by centring the search ~400 m ahead. A wider geosearch (extracts only for the top-ranked) is still an option if driving finds too few places.
 - **Phase 3 to-dos from Phase 2:** done (caches close on shutdown; narration looks the landmark up with `getById`).
 - **Phase 3 prompt review (2026-10-31, Lead):** prompt v2 (sentence-count target, use the material fully, end early instead of padding, years as digits, rulers' numbers as words). `cleanNarration` strips AD/CE next to years. Measured on six Istanbul places: medium walking went from 64% to 80–100% of target with flash-lite; `google/gemini-2.5-flash` hits the target more reliably and keeps more detail. The human chose to keep flash-lite (cheapest); switching is one line in `.env`. The Lead edited backend-owned `server/src/narration/prompt.ts` and `clean-text.ts` and their tests, since the review needed live iteration.
 - **"Long" narrations run short (55–70%)** because only the Wikipedia intro is sent. Fix later (Phase 5 or 7): send more of the article for the top-ranked landmark.
@@ -76,6 +91,13 @@
 - **Lead edited outside its paths in Phase 2** (`server/src/index.ts` wiring, a one-character fix in `server/src/landmarks/merge.ts`, a one-line typed-href fix in `src/app/settings.tsx`), all small and noted here.
 - **Expo Go can't open the project** (phone has SDK 58 Expo Go, project is SDK 57). Use the dev build.
 - **Maps key:** EAS env var `GOOGLE_MAPS_ANDROID_API_KEY` (development environment, Sensitive), loaded since build `737ab19b`. A phone still running the old build crashes with "API key not found": uninstall it and install the new build.
+- **Phase 5 notes for later:**
+  - Needs a real phone: whether GPS headings are good enough for left/right at walking speed; the short gap between the cue and the story audio; the visited list surviving restarts.
+  - Phase 6: the Live Tour stops when the screen is left or locked; background tracking and the notification controls come next. No lower location accuracy at steady driving speed yet.
+  - The backend edited qa-owned `server/src/__fixtures__/test-app.ts` (added the `cues` dependency) so the test app compiles.
+  - Route data in `src/dev/routes/` ships in release bundles (small, harmless).
+  - After a failed pre-fetch, later fixes before the next check can pre-fetch the next-best place, one at a time, so a failing server sees one failed request per candidate until then. Cost-neutral; tighten if it shows up in logs.
+  - Not unit-tested (device-only): the expo-location and permission adapters, and the tour/settings screens (no React Native testing library).
 - **Phase 4 notes for later:**
   - Phase 6: the device voice keeps talking in the background while audio files pause (`shouldPlayInBackground: false`), and expo-speech doesn't duck other audio. Align both when background audio is turned on.
   - A tap replaced by a newer one doesn't cancel its in-flight requests; the server still writes (and caches) that story. Optional: pass an abort signal through `apiClient`.
@@ -100,4 +122,4 @@
   - OpenRouter, ElevenLabs and Railway accounts before Phase 3
 
 ## Next phase
-Phase 5: Live Tour mode, foreground (`docs/BRIEF.md` Part D), when the human gives the go-ahead. Reuses `src/audio/` and `mapStyle`; the Settings screen will supply narration length, voice and travel mode.
+Phase 6: background location + background audio (`docs/BRIEF.md` Part D), when the human gives the go-ahead. Deploy the server first (postponed to the start of Phase 6). Needs one dev build rebuild for the new permissions.
