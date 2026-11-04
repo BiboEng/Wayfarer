@@ -5,7 +5,7 @@ import { tourSession } from '@/tour';
 import type { TourSource } from '@/tour/types';
 
 /** Statuses that wait for the user to fix something outside the app (permission, location switch, precise location). */
-const WAITING_STATUSES = ['needs-permission', 'permission-denied', 'location-off', 'location-approximate'];
+const WAITING_STATUSES: readonly string[] = ['needs-permission', 'permission-denied', 'location-off', 'location-approximate'];
 
 /**
  * Ties the tour to the Live Tour screen: it starts on mount and stops on unmount. When the app

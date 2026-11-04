@@ -29,12 +29,12 @@ RUN mkdir -p /data && chown node:node /data
 ENV CACHE_PATH=/data/cache.sqlite
 ENV AUDIO_DIR=/data/audio
 
-# The entrypoint starts as root only to chown the (root-owned) Railway volume, then
+# The entrypoint starts as root only to chown the (root-owned) Fly.io volume, then
 # drops to the unprivileged "node" user with setpriv (util-linux, part of Debian base).
 COPY server/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN sed -i 's/[[:cntrl:]]$//' /usr/local/bin/docker-entrypoint.sh && chmod 755 /usr/local/bin/docker-entrypoint.sh
 
-# The app reads PORT from the environment (Railway sets it); 3000 is the default.
+# The app reads PORT from the environment (fly.toml sets 3000, the default).
 EXPOSE 3000
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]

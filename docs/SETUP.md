@@ -80,11 +80,67 @@ A Maps key can't be hidden inside an app, so Google protects it with **restricti
   1. Sign up at https://openrouter.ai.
   2. Add a small prepaid credit (e.g. $5). Prepaid means it can't overspend.
   3. Create an API key, ideally with a credit limit on the key.
-  4. It goes only into `server/.env` as `OPENROUTER_API_KEY`, and later into Railway's variables.
+  4. It goes only into `server/.env` as `OPENROUTER_API_KEY`, and later into Fly's secrets.
 - **ElevenLabs** (premium voice, Phase 3).
   1. Sign up at https://elevenlabs.io and start on the free plan, which has a monthly character quota.
   2. Create an API key restricted to *Text to Speech*.
   3. It goes only into `server/.env` as `ELEVENLABS_API_KEY`.
-- **Railway** (hosting, Phase 3). Sign up at https://railway.com with GitHub. I'll walk you through the deploy then.
+- **Fly.io** (hosting, Phase 6). See section 7. (Railway was the first choice, but it paused new signups in October 2026.)
 
-**Golden rule:** keys live in `server/.env` (git-ignored), in Railway's variables, or in EAS env vars. Nowhere else.
+**Golden rule:** keys live in `server/.env` (git-ignored), in Fly's secrets, or in EAS env vars. Nowhere else.
+
+## 7. Put the server online (Fly.io, Phase 6)
+
+The phone has to reach the server over mobile data, not just your Wi-Fi. `fly.toml` (repo root) already holds the settings. Expect about $3–4 a month: a small machine that stops when idle, plus a 1 GB disk (~$0.15) that keeps the cache and the daily cost caps across restarts.
+
+1. **Install flyctl.** In PowerShell: `iwr https://fly.io/install.ps1 -useb | iex`, then open a **new** terminal and check `fly version`.
+2. **Account.** Run `fly auth signup` (or `fly auth login`). Fly asks for a card; there's no free tier for new accounts.
+3. **Create the app.** In the project folder: `fly apps create wayfarer-biboeng`.
+   - If the name is taken, pick another and change `app = ...` at the top of `fly.toml` to match. The name isn't secret.
+4. **Create the disk** (same region as `primary_region` in `fly.toml`, Frankfurt by default; `fly platform regions` lists closer ones):
+   `fly volumes create wayfarer_data --size 1 --region fra`. Answer **y** to the warning about having only one volume; that's fine for us.
+5. **Secrets.** These copy the five values straight from your `server/.env` to Fly, so no key is typed into the terminal or saved in its history:
+   ```powershell
+   Get-Content server/.env | Select-String '^(APP_TOKEN|OPENROUTER_API_KEY|ELEVENLABS_API_KEY|ELEVENLABS_VOICES|UPSTREAM_CONTACT)=' | ForEach-Object { $_.Line } | fly secrets import --stage
+   ```
+   All five must be set and **not commented out** in `server/.env`: `fly.toml` turns on the ElevenLabs voice, and without `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICES` the server refuses to start and keeps restarting.
+   Then `fly secrets list` should show those five names (the values stay hidden).
+6. **Deploy.** From the project folder (repo root, not `server/`): `fly deploy`. The first build takes a few minutes.
+   - If OneDrive gets in the way (file-locked errors), pause sync and run it again.
+7. **Check it.** Open `https://wayfarer-biboeng.fly.dev/health` in a browser. It should show `{"status":"ok",...}`.
+8. **Point the app at it.** In `.env.local`, set `EXPO_PUBLIC_API_URL=https://wayfarer-biboeng.fly.dev` (keep `EXPO_PUBLIC_APP_TOKEN` equal to `APP_TOKEN`). Restart with `npx expo start --clear`. Settings should show **Server: ok**.
+   - The dev build still loads its code from your laptop. Open the app on Wi-Fi first; after that it talks to Fly, also on mobile data.
+
+**Later changes:** server code → `fly deploy` again. A secret → change it in `server/.env`, then run the step 5 command again **without** `--stage` (it redeploys by itself). Don't use `fly secrets set NAME=value`: the value would land in PowerShell's history file. Logs → `fly logs` (they never contain keys).
+
+## 8. Phase 6: rebuild the dev build and test with the screen locked
+
+Phase 6 adds native pieces: the location foreground service, background audio and notifications. Your phone needs a new dev build once. Ordinary code changes still reload over Wi-Fi after that.
+
+### Rebuild and install
+1. In the project folder: `npx eas-cli@latest build --profile development --platform android` (cloud build, about 10–20 min). Pause OneDrive if it shows file-locked errors.
+2. Open the link it prints on the phone and install. It installs over the old build; if Android refuses, uninstall Wayfarer first.
+3. Start Metro with a clean cache: `npx expo start --clear`, then open Wayfarer on the phone.
+
+### First start of a tour
+- **Allow location** → choose **While using the app** (Wayfarer never asks for "Allow all the time"; it doesn't need it).
+- **Lock-screen controls** → **Allow notifications** (or **Continue without**; the tour runs either way and won't ask again).
+- Two notifications appear while a tour runs: "Wayfarer tour is running" (Android requires it for location in the background) and the tour controls with **Pause / Stop**.
+
+### What to test
+1. **Screen locked, walking.** Start a tour, lock the phone, walk 10–15 minutes. Stories should keep coming. Music or a podcast should get quieter during a story instead of stopping. Check that audio still plays after more than 3 minutes locked.
+2. **Lock-screen buttons.** Pause, then Resume, then Stop from the notification without unlocking. Each tap should act once. After Stop, both notifications go away and the app shows "Tour ended".
+3. **No notifications.** In Android settings turn Wayfarer's notifications off, start a tour: it must still narrate with the screen locked (only the buttons are missing).
+4. **Swipe away.** During a tour, swipe Wayfarer away from the recent apps. The tour and the location notification should end. Note whether the Pause/Stop notification stays behind (if it does, tapping one of its buttons or opening the app should remove it).
+5. **Explore.** Start a story in Explore and press Home: the story should pause (both the server voice and the phone voice), and stay paused when you come back until you tap Play.
+6. **Phase 5 leftovers.** Do left/right cues match reality while walking? How long is the gap between "Coming up on your left" and the story? After closing and reopening the app, are today's places still skipped?
+7. **Driving (as a passenger).** With the screen locked the tour keeps going. A switch between walking and driving made while locked fully applies after you next unlock (an Android limit); stories keep coming meanwhile.
+
+### Samsung: if the tour stops with the screen off
+Samsung's battery saver can kill background apps. Do these in order and test again after each:
+1. Settings → Apps → Wayfarer → Battery → **Unrestricted**.
+2. Settings → Battery → **Background usage limits** → make sure Wayfarer is **not** in *Sleeping apps* or *Deep sleeping apps*, then add it to **Never sleeping apps**.
+3. Still stopping? In the same screen, turn off **Put unused apps to sleep**.
+4. Optional: in Recent apps, tap Wayfarer's icon → **Lock this app**, so "Close all" skips it.
+
+Tell me what you see for each numbered test, especially anything that stops, repeats, or makes a sound it shouldn't.

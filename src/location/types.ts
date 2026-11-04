@@ -46,3 +46,16 @@ export interface LocationSource {
   /** Stops for good; no more fixes after this. */
   stop(): void;
 }
+
+/**
+ * Location updates that keep coming with the screen off (an Android foreground service).
+ * Unlike LocationSource, start and setOptions report whether the system accepted them.
+ */
+export interface BackgroundLocationSource {
+  /** Resolves once updates run; rejects when the system refuses (nothing is left running then). */
+  start(options: TrackingOptions, onFix: FixListener, onError?: LocationErrorListener): Promise<void>;
+  /** Re-applies options to running updates; rejects when refused (the old options keep running). */
+  setOptions(options: TrackingOptions): Promise<void>;
+  /** Stops for good; no more fixes after this. */
+  stop(): void;
+}

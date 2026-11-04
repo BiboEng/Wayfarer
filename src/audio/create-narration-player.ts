@@ -1,26 +1,50 @@
 /**
- * Wires the state machine to the sound outputs. No React or Expo imports: the outputs are
- * passed in, so this can be tested with fakes.
+ * Wires the state machine to the sound outputs. No React or Expo imports: the outputs and the
+ * app-state subscription are passed in, so this can be tested with fakes.
+ *
+ * Off screen, sound goes on only while background playback is allowed (a Live Tour). Otherwise
+ * the player pauses when the app leaves the screen, for both outputs (expo-audio would stop by
+ * itself after a while; the device voice would carry on). It stays paused until resume().
  */
 import { introOutputFor } from './intro-output';
 import type { PlaybackCallbacks, PlaybackOutput, StartAudioFile, StartDeviceVoice } from './playback-output';
 import { INITIAL_MACHINE_STATE, playerReducer, type MachineEvent, type MachineState } from './player-machine';
-import type { NarrationPlayer, PlayableNarration, PlayerState } from './types';
+import type { BackgroundAwarePlayer, PlayableNarration, PlayerState } from './types';
 
 export interface NarrationPlayerDeps {
   startAudioFile: StartAudioFile;
   startDeviceVoice: StartDeviceVoice;
-  /** Configures the audio session; awaited before each output starts. Should not reject. */
-  prepareAudio: () => Promise<void>;
+  /**
+   * Configures the audio session (`background`: keep playing off screen); awaited before each
+   * output starts, and called again when that changes. Should not reject.
+   */
+  prepareAudio: (background: boolean) => Promise<void>;
+  /** Calls the listener with false when the app leaves the screen and true when it is back. Omit = always on screen. */
+  subscribeAppState?: (listener: (onScreen: boolean) => void) => void;
 }
 
-export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlayer {
+export function createNarrationPlayer(deps: NarrationPlayerDeps): BackgroundAwarePlayer {
   let machine: MachineState = INITIAL_MACHINE_STATE;
   let snapshot: PlayerState = toPlayerState(machine);
   let narration: PlayableNarration | null = null;
   /** The one output allowed to make sound. */
   let current: PlaybackOutput | null = null;
   const listeners = new Set<() => void>();
+  let backgroundAllowed = false;
+  let offScreen = false;
+  deps.subscribeAppState?.((onScreen) => {
+    offScreen = !onScreen;
+    holdOffScreen();
+  });
+
+  /** Pauses a playing narration when it may not go on off screen. */
+  function holdOffScreen(): void {
+    if (!offScreen || backgroundAllowed) return;
+    // expo-audio may have paused itself first (machine already 'paused' by the interruption):
+    // pause the output too, so it doesn't resume by itself when the app is back.
+    if (machine.status === 'paused') current?.pause();
+    else pause();
+  }
 
   function dispatch(event: MachineEvent): MachineState {
     const next = playerReducer(machine, event);
@@ -61,7 +85,11 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
 
   function callbacksFor(token: number): PlaybackCallbacks {
     return {
-      onStarted: () => dispatch({ type: 'OUTPUT_STARTED', token }),
+      onStarted: () => {
+        dispatch({ type: 'OUTPUT_STARTED', token });
+        // Started (or moved on from the intro) after the app left the screen.
+        if (token === machine.token) holdOffScreen();
+      },
       onFinished: () => {
         if (token !== machine.token) return;
         current = null;
@@ -78,6 +106,12 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
     };
   }
 
+  function pause(): void {
+    if (machine.status !== 'playing') return;
+    current?.pause();
+    dispatch({ type: 'PAUSED', token: machine.token });
+  }
+
   return {
     play(next) {
       stopOutput();
@@ -89,15 +123,11 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
         introOutput: introOutputFor(next),
       });
       void deps
-        .prepareAudio()
+        .prepareAudio(backgroundAllowed)
         .catch(() => undefined)
         .then(() => startOutput(token));
     },
-    pause() {
-      if (machine.status !== 'playing') return;
-      current?.pause();
-      dispatch({ type: 'PAUSED', token: machine.token });
-    },
+    pause,
     resume() {
       if (machine.status !== 'paused') return;
       const { token } = machine;
@@ -109,6 +139,12 @@ export function createNarrationPlayer(deps: NarrationPlayerDeps): NarrationPlaye
       stopOutput();
       narration = null;
       dispatch({ type: 'STOP' });
+    },
+    setBackgroundAllowed(allowed) {
+      if (allowed === backgroundAllowed) return;
+      backgroundAllowed = allowed;
+      deps.prepareAudio(allowed).catch(() => undefined);
+      holdOffScreen();
     },
     getState: () => snapshot,
     subscribe(listener) {

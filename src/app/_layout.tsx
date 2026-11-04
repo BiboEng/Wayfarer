@@ -1,12 +1,18 @@
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
 import { SettingsHeaderButton } from '@/components/settings-header-button';
 import { colors, navigationTheme, typography } from '@/theme';
+import { cleanUpTourLeftovers } from '@/tour';
 
 // Fonts are embedded at build time (expo-font config plugin), so there is
 // nothing to wait for: the splash screen auto-hides once the first screen renders.
 export default function RootLayout() {
+  useEffect(() => {
+    cleanUpTourLeftovers();
+  }, []);
+
   return (
     <ThemeProvider value={navigationTheme}>
       <StatusBar style="light" />

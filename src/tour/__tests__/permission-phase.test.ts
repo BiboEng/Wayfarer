@@ -1,4 +1,4 @@
-import { phaseAfterPrompt, phaseForPermission } from '../permission-phase';
+import { phaseAfterPrompt, phaseForNotifications, phaseForPermission } from '../permission-phase';
 
 describe('phaseForPermission', () => {
   it('precise grant -> the tour may start', () => expect(phaseForPermission('granted')).toBeNull());
@@ -14,4 +14,13 @@ describe('phaseAfterPrompt', () => {
     expect(phaseAfterPrompt('undetermined')).toBe('permission-denied');
   });
   it('an approximate grant shows location-approximate', () => expect(phaseAfterPrompt('approximate')).toBe('location-approximate'));
+});
+
+describe('phaseForNotifications', () => {
+  it('undetermined and not declined -> needs-notifications', () => expect(phaseForNotifications('undetermined', false)).toBe('needs-notifications'));
+  it('undetermined but declined before -> start the tour', () => expect(phaseForNotifications('undetermined', true)).toBeNull());
+  it.each(['granted', 'denied'] as const)('%s never shows the explanation', (permission) => {
+    expect(phaseForNotifications(permission, false)).toBeNull();
+    expect(phaseForNotifications(permission, true)).toBeNull();
+  });
 });

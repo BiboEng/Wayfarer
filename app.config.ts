@@ -5,6 +5,11 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 // When it is missing the app still runs; the map just stays blank.
 const googleMapsAndroidApiKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY ?? '';
 
+/** 96x96 white-on-transparent icon for the tour notifications (Android tints it). */
+const notificationIcon = './assets/images/notification-icon.png';
+/** Theme accent. */
+const notificationColor = '#C1693C';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Wayfarer',
@@ -41,7 +46,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         imageWidth: 76,
       },
     ],
-    'expo-audio',
+    // Live Tour keeps narrating with the screen locked (the location service keeps the app alive).
+    ['expo-audio', { enableBackgroundPlayback: true }],
+    [
+      // The tour runs as a foreground service started from the screen, which only needs
+      // "While using the app"; we never ask for "Allow all the time" (background permission).
+      'expo-location',
+      {
+        isAndroidForegroundServiceEnabled: true,
+        isAndroidBackgroundLocationEnabled: false,
+        androidForegroundServiceIcon: notificationIcon,
+      },
+    ],
+    // The tour's Pause/Resume/Stop notification (local notifications only; no push).
+    ['expo-notifications', { icon: notificationIcon, color: notificationColor }],
     [
       // Embeds fonts at build time; on Android the family name is the file name.
       'expo-font',

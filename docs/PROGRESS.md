@@ -1,6 +1,16 @@
 # Wayfarer — Progress
 
 ## Current status
+**Phase 6 (background location + background audio) is built, reviewed and fixed; waiting for the human's phone test (2026-11-03).** `npm run check` passes (1040 app tests, 837 server tests); `expo export --platform android` bundles (after `--clear`, see Open issues); `expo-doctor` 21/21. Added `expo-notifications` and moved all Expo packages to SDK 57's expected patch versions (`expo` 57.0.31, `expo-location` 57.0.22, `expo-router` 57.0.29, `@expo/ui` 57.0.26, `jest-expo` 57.0.6 and four more). Needs one dev build rebuild (`docs/SETUP.md` section 8).
+- **Background tracking** (`src/location/`, tour-engine): a TaskManager location task runs as an Android foreground service ("Wayfarer tour is running"), started from the tour screen with only "While using the app". `distanceInterval: 0` keeps fixes coming every 3 s (walking) / 5 s (driving) while standing still, because React Native freezes JS timers in the background except while a task event runs. Only the newest fix in a batch steers the tour. If Android refuses the service, the tour retries once when back on screen, then falls back to the screen-only watch with keep-awake and a short note (`snapshot.runsInBackground`).
+- **Lock-screen controls** (`src/tour/notification/`): a second, silent notification (expo-notifications, low-importance channel `tour_controls`, no sound or vibration) with Pause/Resume and Stop that act without opening the app. Taps arrive through a TaskManager task (off screen) and a response listener (on screen); each tap runs once. Stop → status `'ended'` ("Tour ended" card with Start again / Home). The notification can be swiped away; it's re-posted on the next change.
+- **Notification permission:** after location, a "Lock-screen controls" explanation card asks once ("Allow notifications" / "Continue without"); a refusal or "Continue without" is remembered, and the tour runs either way.
+- **Audio** (`src/audio/`): background playback is allowed only while a tour runs; `duckOthers` kept (music gets quieter, not paused); no lock-screen media controls (they'd need `doNotMix`). Outside a tour (Explore) the player pauses both outputs when the app leaves the screen and doesn't resume by itself.
+- **Entry:** root `index.ts` defines the tasks, then loads `expo-router/entry` (`package.json` main), so a start without UI still finds them. `cleanUpTourLeftovers()` in the root layout stops stray location updates and removes a stray notification.
+- **Screens** (mobile-ui): notification card, "Tour ended" card, keep-awake only in the fallback, a 96×96 notification icon.
+- **Server deploy: postponed again (human's choice, 2026-11-03), for now only.** `fly.toml` (root) and `docs/SETUP.md` section 7 are ready for later. Phase 6 testing uses the server on the laptop: home Wi-Fi, or a Cloudflare quick tunnel for walks on mobile data (`docs/SETUP.md` section 5, step 6). No server code changes.
+- **Review:** no blockers; four should-fixes (late stop of a shared location task killing a newer tour's GPS, task definitions missing on a headless start, PROGRESS/docs, secret-change advice) and four nits (Explore audio resuming by itself, batch fixes triggering several searches, Railway wording, ElevenLabs lines needed on Fly) fixed.
+
 **Phase 5 (Live Tour, foreground) is done: reviewed and approved by the human (2026-11-02).** `npm run check` passes (884 app tests, 837 server tests); `expo export --platform android` bundles. Added `expo-keep-awake` (already in the dev build through `expo`, so no rebuild).
 - **Tour engine** (`src/tour/`, tour-engine): pure modules plus `create-tour-session.ts` (dependencies injected) and the `tourSession` singleton.
   - Speed modes with hysteresis: driving after ~15 s above 12 km/h, walking after ~30 s below 7 km/h; Settings can fix the mode. Walking searches 200 m and re-checks every 60 m; driving searches 800 m centred ~400 m ahead (works around Wikipedia's 20-nearest cap), re-checks every 250 m, and only takes places ahead.
@@ -62,7 +72,7 @@
   - Imported as `@shared/...` on both sides.
   - The app relies on Metro and tsconfig paths; Jest has an explicit `moduleNameMapper`.
   - The server resolves it with tsx in dev, and tsup inlines it into the bundle. Reason: no workspaces needed, nothing to publish. (Approved.)
-- **Backend on Railway Hobby with a persistent volume.** It must build from the repo root so `shared/` is included. (Approved.)
+- **Backend on Fly.io with a 1 GB volume** (human's choice, 2026-11-03; replaces Railway, which paused new signups). **Deploy postponed for now** (human, 2026-11-03): the app works fully against the laptop server; Fly is needed only for use while the laptop is off or on other phones. Builds from the repo root so `shared/` is included; machine stops when idle (1–3 s cold start). `railway.json` stays in the repo, unused.
 - **Server deploy postponed from Phase 3 to the start of Phase 6 at the latest** (human approved 2026-10-31; deviates from Part D). Reason: Phases 4–5 can be tested at the desk over home Wi-Fi (Phase 5 has the route simulator), and Railway paused new signups after its 2026-10-21 security incident, so the host may change. Phase 6 needs the phone to reach the server over mobile data. A Cloudflare Tunnel from the laptop works as a stopgap. `server/Dockerfile` and `railway.json` stay ready.
 - **Subagent models:** sonnet for mobile-ui, landmark-data, backend and qa; the session model for tour-engine and reviewer. (Approved.)
 - **`src/explore/` is Lead-owned** (Explore flow logic and hook), since the brief gives the Explore wiring to the Lead. Added to the CLAUDE.md ownership table. (Phase 4)
@@ -71,6 +81,9 @@
 - **Live Tour rules (Phase 5 plan, approved):** a new story only after the current one ends; Skip, Replay (plays now) and Stop are the only interruptions; screen kept awake and the tour stops on leaving the screen until Phase 6; orientation line in the same voice from server cues (human's choice).
 - **`src/settings/` is mobile-ui-owned** (CLAUDE.md row added). Settings uses themed buttons instead of `@expo/ui` pickers (their popups ignore the theme); `@expo/ui` is unused for now but kept for later switches. (Phase 5)
 - **Package id `com.biboeng.wayfarer`.** It's tied to the Maps key restriction.
+- **No "Allow all the time" request** (human approved 2026-11-03; deviates from Feature 1 step 1, brief not edited). Reason: expo-location's Android code lets a foreground service started from the screen use "While using the app" location with the screen locked; one fewer screen and no Google Play background-location review.
+- **No lower location accuracy while driving steadily** (brief item 9, "if reliable"). Reason: balanced accuracy (~100 m) fails the 150 m accuracy gate and breaks left/right; driving already updates only every 5 s.
+- **Pause/Stop in a separate expo-notifications notification**, because the location service's notification can't have buttons. (Phase 6 plan, approved.)
 - **Native modules installed up front:** maps, location, task-manager, audio, speech, async-storage, dev-client. One dev build covers Phases 1–5; Phase 6 permissions mean one rebuild. (Human approved; deviates from the per-phase installs in Part D.)
 - **Config in `app.config.ts` only (no `app.json`)**, so the Maps key comes from env. `npx expo install` can't auto-add plugins to it, so plugin entries are added by hand.
 - **Node 24 LTS target.** CI and server `engines` use 24. Local Node is 24.22.1.
@@ -93,13 +106,20 @@
 - **Maps key:** EAS env var `GOOGLE_MAPS_ANDROID_API_KEY` (development environment, Sensitive), loaded since build `737ab19b`. A phone still running the old build crashes with "API key not found": uninstall it and install the new build.
 - **Phase 5 notes for later:**
   - Needs a real phone: whether GPS headings are good enough for left/right at walking speed; the short gap between the cue and the story audio; the visited list surviving restarts.
-  - Phase 6: the Live Tour stops when the screen is left or locked; background tracking and the notification controls come next. No lower location accuracy at steady driving speed yet.
+  - Leaving the tour screen inside the app still stops the tour (locking or switching apps doesn't).
+- **Phase 6 notes for later:**
+  - Needs a real phone (`docs/SETUP.md` section 8): screen-locked walk, audio after 3+ min locked, notification buttons from the lock screen, swipe-away cleanup, Explore pausing, Samsung battery settings.
+  - A walking ↔ driving switch while locked: Android refuses to restart the location service off screen, so the new tracking rate applies at the next unlock (search radius and ranking change at once).
+  - The dev route simulator pauses when the screen locks (its timers aren't location events).
+  - If background audio dies after ~3 min locked: turn on expo-audio lock-screen controls (`setActiveForLockScreen`), which needs `doNotMix` (music pauses during stories).
+  - Metro failed with `EINVAL readlink` after the package updates (OneDrive + stale cache); `--clear` fixed it.
+  - Lead edited outside its paths: removed the task import from `src/app/_layout.tsx` (moved to `index.ts`), and Railway → Fly.io wording in `server/.env.example`, `server/Dockerfile`, `server/docker-entrypoint.sh`.
   - The backend edited qa-owned `server/src/__fixtures__/test-app.ts` (added the `cues` dependency) so the test app compiles.
   - Route data in `src/dev/routes/` ships in release bundles (small, harmless).
   - After a failed pre-fetch, later fixes before the next check can pre-fetch the next-best place, one at a time, so a failing server sees one failed request per candidate until then. Cost-neutral; tighten if it shows up in logs.
   - Not unit-tested (device-only): the expo-location and permission adapters, and the tour/settings screens (no React Native testing library).
 - **Phase 4 notes for later:**
-  - Phase 6: the device voice keeps talking in the background while audio files pause (`shouldPlayInBackground: false`), and expo-speech doesn't duck other audio. Align both when background audio is turned on.
+  - Done in Phase 6: outside a tour both outputs pause when the app leaves the screen. expo-speech still doesn't duck other audio.
   - A tap replaced by a newer one doesn't cancel its in-flight requests; the server still writes (and caches) that story. Optional: pass an abort signal through `apiClient`.
   - The sentence splitter treats "St.", "No.", "c." and initials as abbreviations, so a sentence really ending in one isn't split there (only makes a chunk longer).
   - Not covered by unit tests (device-only): the expo-audio / expo-speech adapters, the hooks, and map rendering.
@@ -119,7 +139,7 @@
 - Dev machine: Windows 11, Node 24.22.1 (upgraded from 20 before Phase 2), git 2.55. No Java or Android SDK (not needed with EAS Build).
 - *To do (see `docs/SETUP.md`):*
   - Google Maps key from the keystore SHA-1 → EAS env var `GOOGLE_MAPS_ANDROID_API_KEY`, then rebuild
-  - OpenRouter, ElevenLabs and Railway accounts before Phase 3
+  - Phase 6 rebuild (`docs/SETUP.md` section 8). Fly.io account and deploy (section 7) later, when wanted.
 
 ## Next phase
-Phase 6: background location + background audio (`docs/BRIEF.md` Part D), when the human gives the go-ahead. Deploy the server first (postponed to the start of Phase 6). Needs one dev build rebuild for the new permissions.
+Finish Phase 6: the human rebuilds the dev build and runs the locked-screen tests (`docs/SETUP.md` section 8), with the server on the laptop (tunnel for walks outside). Fly.io deploy later (section 7). Then Phase 7 (polish) after the go-ahead.

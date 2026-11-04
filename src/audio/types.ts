@@ -50,3 +50,12 @@ export interface NarrationPlayer {
   /** Returns an unsubscribe function. */
   subscribe(listener: () => void): () => void;
 }
+
+/** The app-wide player: also decides whether sound may go on when the app leaves the screen. */
+export interface BackgroundAwarePlayer extends NarrationPlayer {
+  /**
+   * true while a Live Tour runs (its foreground service keeps the app alive): sound goes on with
+   * the screen off. false (default, e.g. Explore): sound pauses when the app leaves the screen.
+   */
+  setBackgroundAllowed(allowed: boolean): void;
+}

@@ -3,8 +3,8 @@
  * No React or Expo imports: every device and server dependency is injected, so this can be
  * tested with fakes. The app-wide instance lives in `tour-session.ts`.
  *
- * Hands-free: nothing here prompts or shows anything. Only `requestPermission()` (called from a
- * tap) shows the system prompt. Every failure is quiet.
+ * Hands-free: nothing here prompts or shows anything. Only `requestPermission()` and
+ * `requestNotifications()` (called from a tap) show a system prompt. Every failure is quiet.
  */
 import type { NarrationAudio } from '@shared/api/narration';
 import type { LatLng } from '@shared/geo/lat-lng';
@@ -12,13 +12,13 @@ import type { TravelMode } from '@shared/narration/options';
 
 import type { NarrationPlayer, RemoteSound } from '@/audio/types';
 import { trackingOptionsFor } from '@/location/tracking-options';
-import type { LocationFix, LocationPermission, LocationSource } from '@/location/types';
+import type { LocationFix, LocationSource } from '@/location/types';
 import type { TourSettings } from '@/settings/types';
 
 import { createCueCache } from './cue-cache';
 import { isUsableFix, profileFor } from './mode-profile';
 import { currentHeading, INITIAL_MOTION, resolveMode, updateMotion, type MotionState } from './motion';
-import { phaseAfterPrompt, phaseForPermission } from './permission-phase';
+import { createPermissionFlow, STALE, type PermissionDeps } from './permission-flow';
 import { createPlayerLink } from './player-link';
 import { createCommandRunner, type TourApi } from './tour-commands';
 import { initialTourState, tourReducer } from './tour-machine';
@@ -28,16 +28,16 @@ import type { TourSession, TourSnapshot, TourSource } from './types';
 import { localDateKey } from './visited';
 import type { VisitedStore } from './visited-storage';
 
-export interface TourSessionDeps {
-  /** A simulated source needs no permission; real GPS does. */
+export interface TourSessionDeps extends PermissionDeps {
+  /** A simulated source needs no permission (and never runs in the background); real GPS does. */
   isSimulated(source: TourSource): boolean;
-  createLocationSource(source: TourSource): LocationSource;
-  getPermission(): Promise<LocationPermission>;
-  requestPermission(): Promise<LocationPermission>;
-  servicesEnabled(): Promise<boolean>;
+  /** `onBackgroundKnown`: real GPS reports whether it keeps tracking with the screen off. */
+  createLocationSource(source: TourSource, onBackgroundKnown: (runsInBackground: boolean) => void): LocationSource;
   api: TourApi;
   audioSource(audio: NarrationAudio): RemoteSound | null;
   player: NarrationPlayer;
+  /** Lets the player keep talking with the screen off (true while a tour runs). Omit = never changed. */
+  allowBackgroundAudio?: (allowed: boolean) => void;
   visitedStore: VisitedStore;
   /** Read at the moment of use, so Settings changes apply to the next story / fix. */
   getSettings(): TourSettings;
@@ -64,15 +64,25 @@ export function createTourSession(deps: TourSessionDeps): TourSession {
   let displayPosition: LatLng | null = null;
   let location: LocationSource | null = null;
   let trackingMode: TravelMode | null = null;
+  let runsInBackground: boolean | null = null;
   let unsubscribeSettings: (() => void) | null = null;
-  /** The system permission prompt is showing; start() must not discard its answer. */
-  let asking = false;
   /** Bumped on every start/stop; async results from an older tour are ignored. */
   let generation = 0;
   const queue: TourEvent[] = [];
   let dispatching = false;
   let snapshot: TourSnapshot = buildSnapshot();
   const listeners = new Set<() => void>();
+  const permissions = createPermissionFlow(deps, {
+    phase: () => phase,
+    generation: () => generation,
+    setPhase,
+    cancel() {
+      const wasRunning = phase === 'running';
+      teardown(); // also cancels a pending check
+      if (wasRunning) setPhase('idle');
+    },
+    restart: (askNotifications) => launch(source, askNotifications),
+  });
 
   /** Detected mode with the Settings override applied. */
   function currentMode(): TravelMode {
@@ -87,6 +97,7 @@ export function createTourSession(deps: TourSessionDeps): TourSession {
       modeFixed: deps.getSettings().travelMode !== 'auto',
       playerPaused: link.isPaused(),
       displayPosition,
+      runsInBackground,
     });
     // Before the first fix the reducer hasn't seen the mode yet; show the Settings one.
     return machine.position ? built : { ...built, mode: currentMode() };
@@ -163,6 +174,8 @@ export function createTourSession(deps: TourSessionDeps): TourSession {
     location?.stop();
     location = null;
     trackingMode = null;
+    runsInBackground = null;
+    deps.allowBackgroundAudio?.(false);
     unsubscribeSettings?.();
     unsubscribeSettings = null;
     link.stop();
@@ -178,6 +191,8 @@ export function createTourSession(deps: TourSessionDeps): TourSession {
     phase = 'running';
     const mode = currentMode();
     machine = initialTourState(mode);
+    runsInBackground = deps.isSimulated(source) ? false : null;
+    deps.allowBackgroundAudio?.(true);
     link.connect(
       (narrationId, failed) => dispatchFor(owner)({ type: 'PLAYBACK_ENDED', narrationId, failed }),
       () => {
@@ -197,7 +212,11 @@ export function createTourSession(deps: TourSessionDeps): TourSession {
     );
 
     trackingMode = mode;
-    location = deps.createLocationSource(source);
+    location = deps.createLocationSource(source, (runs) => {
+      if (owner !== generation) return;
+      runsInBackground = runs;
+      emit();
+    });
     location.start(
       trackingOptionsFor(mode),
       (fix) => {
@@ -209,52 +228,40 @@ export function createTourSession(deps: TourSessionDeps): TourSession {
   }
 
   /** Checked on every start, so coming back from the phone's Settings just works. */
-  async function checkAndBegin(owner: number): Promise<void> {
+  async function checkAndBegin(owner: number, askNotifications: boolean): Promise<void> {
     if (!deps.isSimulated(source)) {
-      const waiting = phaseForPermission(await deps.getPermission());
-      if (owner !== generation) return;
+      const waiting = await permissions.check(owner, askNotifications);
+      if (waiting === STALE) return;
       if (waiting) return setPhase(waiting);
-      const enabled = await deps.servicesEnabled();
-      if (owner !== generation) return;
-      if (!enabled) return setPhase('location-off');
     }
     begin(owner);
   }
 
-  function start(next: TourSource = 'gps'): void {
+  function launch(next: TourSource, askNotifications: boolean): void {
     // The prompt's own answer starts the tour (the dialog's AppState bounce must not discard it).
-    if (asking) return;
+    if (permissions.isAsking()) return;
     if (phase === 'running' && next === source) return;
     const wasRunning = phase === 'running';
     teardown();
     source = next;
     // A waiting screen stays up until the new check answers (no flicker through idle).
     if (wasRunning) setPhase('idle');
-    checkAndBegin(generation).catch((err: unknown) => log('could not start the tour', String(err)));
+    checkAndBegin(generation, askNotifications).catch((err: unknown) => log('could not start the tour', String(err)));
   }
 
   return {
-    start,
-    requestPermission() {
-      if (asking) return;
-      asking = true;
-      if (phase === 'running') {
-        teardown();
-        setPhase('idle');
-      } else teardown(); // cancels a pending check
-      const owner = generation;
-      const onAnswer = (permission: LocationPermission) => {
-        asking = false;
-        if (owner !== generation) return;
-        const waiting = phaseAfterPrompt(permission);
-        if (waiting) setPhase(waiting);
-        else start(source);
-      };
-      deps.requestPermission().then(onAnswer, () => onAnswer('denied'));
-    },
+    start: (next = 'gps') => launch(next, true),
+    requestPermission: permissions.requestLocation,
+    requestNotifications: permissions.requestNotifications,
+    skipNotifications: permissions.skipNotifications,
     stop() {
       teardown();
       setPhase('idle');
+    },
+    end() {
+      if (phase !== 'running') return;
+      teardown();
+      setPhase('ended');
     },
     pause() {
       if (phase === 'running') dispatch({ type: 'PAUSE' });

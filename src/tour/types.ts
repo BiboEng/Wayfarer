@@ -15,6 +15,14 @@ export type TourStatus =
   | 'location-off'
   /** Only approximate location was allowed (Android 12+): too coarse for a tour. Ask for precise location. */
   | 'location-approximate'
+  /**
+   * Location is fine; notifications (the lock-screen Pause / Stop controls) were never asked.
+   * Show the explanation with "Allow notifications" (requestNotifications()) and "Continue
+   * without" (skipNotifications()). Shown at most until the user answers once.
+   */
+  | 'needs-notifications'
+  /** The tour was ended from outside the screen (the notification's Stop). Offer to start again. */
+  | 'ended'
   /** Tracking; nothing being narrated right now (also when nothing notable is nearby). */
   | 'listening'
   /** A landmark was picked and its story is being fetched. */
@@ -55,6 +63,11 @@ export interface TourSnapshot {
   current: CurrentNarration | null;
   /** Places narrated in this tour, newest first. */
   history: NarratedPlace[];
+  /**
+   * true: tracking goes on with the screen off. false: it pauses off screen (the background
+   * service was refused, or a simulated route), so keep the screen on. null: not known yet.
+   */
+  runsInBackground: boolean | null;
 }
 
 export interface TourSession {
@@ -62,7 +75,14 @@ export interface TourSession {
   start(source?: TourSource): void;
   /** Shows the system location prompt, then starts if granted. Call only from a user tap. */
   requestPermission(): void;
+  /** In 'needs-notifications': shows the system notification prompt, then starts whatever the answer. Call only from a user tap. */
+  requestNotifications(): void;
+  /** In 'needs-notifications': remembers "continue without" (never asked again), then starts. */
+  skipNotifications(): void;
+  /** Stops the tour; status goes back to 'idle'. */
   stop(): void;
+  /** Stops a running tour from outside the screen (notification Stop); status becomes 'ended'. */
+  end(): void;
   pause(): void;
   resume(): void;
   /** Ends the current story and moves on to the next place. */

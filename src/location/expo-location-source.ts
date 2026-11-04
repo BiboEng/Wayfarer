@@ -1,13 +1,12 @@
-/** Real GPS through expo-location's watchPositionAsync (foreground only; background is Phase 6). */
+/**
+ * Real GPS through expo-location's watchPositionAsync. Foreground only: Android pauses the watch
+ * while the app is off screen. The tour uses it only when the background task can't start.
+ */
 import * as Location from 'expo-location';
 
+import { toExpoAccuracy } from './expo-accuracy';
 import { toLocationFix } from './to-location-fix';
-import type { FixListener, LocationErrorListener, LocationSource, TrackingAccuracy, TrackingOptions } from './types';
-
-const ACCURACY: Record<TrackingAccuracy, Location.Accuracy> = {
-  balanced: Location.Accuracy.Balanced,
-  high: Location.Accuracy.High,
-};
+import type { FixListener, LocationErrorListener, LocationSource, TrackingOptions } from './types';
 
 export function createExpoLocationSource(): LocationSource {
   /** Bumped on every (re)start and stop; a watch that resolves late with an old id is removed. */
@@ -34,7 +33,7 @@ export function createExpoLocationSource(): LocationSource {
     };
     Location.watchPositionAsync(
       {
-        accuracy: ACCURACY[options.accuracy],
+        accuracy: toExpoAccuracy(options.accuracy),
         distanceInterval: options.distanceIntervalM,
         timeInterval: options.timeIntervalMs,
         // Hands-free: never pop up the "improve accuracy" system dialog mid-tour.

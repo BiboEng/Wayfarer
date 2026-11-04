@@ -1,0 +1,48 @@
+# Wayfarer server on Fly.io. Deploy from the REPO ROOT (`fly deploy`), so the build context
+# includes shared/ (see server/Dockerfile and .dockerignore).
+# Secrets (APP_TOKEN, OPENROUTER_API_KEY, ELEVENLABS_API_KEY, ELEVENLABS_VOICES, UPSTREAM_CONTACT)
+# are set with `fly secrets set`, never in this file. See docs/SETUP.md.
+
+# Must be unique across Fly; change it if `fly apps create` says the name is taken.
+app = "wayfarer-biboeng"
+primary_region = "fra"
+
+[build]
+  dockerfile = "server/Dockerfile"
+
+[env]
+  PORT = "3000"
+  HOST = "0.0.0.0"
+  # Fly's proxy is one hop in front of the server (for per-IP rate limits).
+  TRUST_PROXY = "1"
+  RATE_LIMIT_PER_MINUTE = "60"
+  NARRATION_RATE_LIMIT_PER_MINUTE = "10"
+  OPENROUTER_MODEL = "google/gemini-2.5-flash-lite"
+  DAILY_LLM_CALL_CAP = "300"
+  TTS_PROVIDER = "elevenlabs"
+  DAILY_TTS_CHAR_CAP = "5000"
+  # CACHE_PATH=/data/cache.sqlite and AUDIO_DIR=/data/audio come from the Dockerfile.
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Stops when idle (cheapest); the next request starts it again in a second or two.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+# Persistent volume: the cache, cached audio and the daily cost-cap counters survive redeploys.
+[[mounts]]
+  source = "wayfarer_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

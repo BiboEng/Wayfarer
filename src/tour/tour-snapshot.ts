@@ -2,7 +2,7 @@
 import type { LatLng } from '@shared/geo/lat-lng';
 
 import type { TourMachineState } from './tour-machine-types';
-import type { CurrentNarration, TourSnapshot, TourSource } from './types';
+import type { CurrentNarration, TourSnapshot, TourSource, TourStatus } from './types';
 
 /** Where the session is, outside the reducer: permission checks happen before tracking starts. */
 export type SessionPhase =
@@ -11,7 +11,9 @@ export type SessionPhase =
   | 'permission-denied'
   | 'location-approximate'
   | 'location-off'
-  | 'running';
+  | 'needs-notifications'
+  | 'running'
+  | 'ended';
 
 export interface SnapshotInput {
   phase: SessionPhase;
@@ -22,9 +24,12 @@ export interface SnapshotInput {
   playerPaused: boolean;
   /** Latest position from any fix, even one too rough to steer the tour (for the map dot). */
   displayPosition?: LatLng | null;
+  /** Omitted = not known yet. */
+  runsInBackground?: boolean | null;
 }
 
-export function toTourSnapshot({ phase, source, machine, modeFixed, playerPaused, displayPosition }: SnapshotInput): TourSnapshot {
+export function toTourSnapshot(input: SnapshotInput): TourSnapshot {
+  const { phase, source, machine, modeFixed, playerPaused, displayPosition, runsInBackground } = input;
   return {
     status: phase === 'running' ? runningStatus(machine, playerPaused) : phase,
     mode: machine.mode,
@@ -35,7 +40,13 @@ export function toTourSnapshot({ phase, source, machine, modeFixed, playerPaused
     nearby: machine.nearby,
     current: currentNarration(machine),
     history: machine.history,
+    runsInBackground: runsInBackground ?? null,
   };
+}
+
+/** A tour is under way (tracking), whatever it is doing right now. */
+export function isRunningStatus(status: TourStatus): boolean {
+  return status === 'listening' || status === 'preparing' || status === 'narrating' || status === 'paused';
 }
 
 function runningStatus(machine: TourMachineState, playerPaused: boolean): TourSnapshot['status'] {
@@ -62,6 +73,7 @@ export function sameSnapshot(a: TourSnapshot, b: TourSnapshot): boolean {
     a.headingDeg === b.headingDeg &&
     a.nearby === b.nearby &&
     a.history === b.history &&
+    a.runsInBackground === b.runsInBackground &&
     sameCurrent(a.current, b.current)
   );
 }

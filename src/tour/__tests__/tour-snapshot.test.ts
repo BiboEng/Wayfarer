@@ -1,7 +1,7 @@
 import { commandsOf, createHarness } from '../__fixtures__/machine-harness';
 import { offsetM, ORIGIN, place } from '../__fixtures__/places';
 import { initialTourState } from '../tour-machine';
-import { currentNarration, sameSnapshot, toTourSnapshot, type SessionPhase } from '../tour-snapshot';
+import { currentNarration, isRunningStatus, sameSnapshot, toTourSnapshot, type SessionPhase } from '../tour-snapshot';
 
 const A = place('A', offsetM(ORIGIN, 100));
 
@@ -118,5 +118,38 @@ describe('sameSnapshot', () => {
     expect(sameSnapshot(narrating, snapshotOf(h.state))).toBe(true);
     expect(sameSnapshot(snapshotOf(), narrating)).toBe(false);
     expect(commandsOf(h.log, 'play')).toHaveLength(1);
+  });
+});
+
+describe('runsInBackground', () => {
+  const build = (runsInBackground?: boolean | null) =>
+    toTourSnapshot({ phase: 'running', source: 'gps', machine: IDLE, modeFixed: false, playerPaused: false, runsInBackground });
+
+  it('is null when not known yet (omitted or null)', () => {
+    expect(build().runsInBackground).toBeNull();
+    expect(build(null).runsInBackground).toBeNull();
+  });
+  it('carries true and false through', () => {
+    expect(build(true).runsInBackground).toBe(true);
+    expect(build(false).runsInBackground).toBe(false);
+  });
+  it('sameSnapshot sees a change in it', () => {
+    expect(sameSnapshot(build(true), build(true))).toBe(true);
+    expect(sameSnapshot(build(null), build(true))).toBe(false);
+    expect(sameSnapshot(build(true), build(false))).toBe(false);
+  });
+});
+
+describe('isRunningStatus', () => {
+  it.each(['listening', 'preparing', 'narrating', 'paused'] as const)('%s is running', (s) => expect(isRunningStatus(s)).toBe(true));
+  it.each(['idle', 'ended', 'needs-permission', 'permission-denied', 'location-approximate', 'location-off', 'needs-notifications'] as const)(
+    '%s is not running',
+    (s) => expect(isRunningStatus(s)).toBe(false),
+  );
+});
+
+describe('ended and needs-notifications phases', () => {
+  it.each(['ended', 'needs-notifications'] as const)('the status is the phase (%s)', (phase) => {
+    expect(snapshotOf(undefined, { phase }).status).toBe(phase);
   });
 });
