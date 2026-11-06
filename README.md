@@ -2,7 +2,7 @@
 
 An Android app that acts as a personal tour guide. Put on headphones and start a tour: as you walk or drive, Wayfarer finds notable landmarks nearby and narrates their history. You can also tap anywhere on a world map to hear about the nearest landmark there.
 
-**Status:** early development (Phase 1, project setup). The full README, with screenshots, an architecture overview and cost notes, comes at the end of the project.
+**Status:** early development (Phase 6, project setup). The full README, with screenshots, an architecture overview and cost notes, comes at the end of the project.
 
 ## Layout
 - `src/`: the Expo (React Native) app; routes are in `src/app/`
