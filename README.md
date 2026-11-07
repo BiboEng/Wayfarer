@@ -20,5 +20,3 @@ npx expo start                # app, opened in the Wayfarer dev build
 npm run check                 # typecheck + lint + tests for app and server
 ```
 
-## A note on security
-The app sends a shared token header that the server checks. That token ships inside the app, so it is **a speed bump against casual abuse, not real authentication**. The real protections are per-IP rate limiting, daily cost caps, and keeping every paid API key on the server.
